@@ -69,12 +69,19 @@ typedef struct _oaes_ctx
 #endif // OAES_HAVE_ISAAC
 
 	oaes_key * key;
+	OAES_OPTIONS options;
+	unsigned char iv[OAES_BLOCK_SIZE];
 } oaes_ctx;
 
-unsigned char oaes_gf_8[] = {
+// "OAES<8-bit header version><8-bit type><16-bit options><64-bit reserved>"
+static unsigned char oaes_header[OAES_BLOCK_SIZE] = {
+	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
+	/*0*/	0x4f, 0x41, 0x45, 0x53, 0x01, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+static unsigned char oaes_gf_8[] = {
 	0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36 };
 
-unsigned char oaes_sub_byte_value[16][16] = {
+static unsigned char oaes_sub_byte_value[16][16] = {
 	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
 	/*0*/	0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
 	/*1*/	0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -94,7 +101,7 @@ unsigned char oaes_sub_byte_value[16][16] = {
 	/*f*/	0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16,
 };
 
-unsigned char oaes_inv_sub_byte_value[16][16] = {
+static unsigned char oaes_inv_sub_byte_value[16][16] = {
 	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
 	/*0*/	0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
 	/*1*/	0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
@@ -114,7 +121,7 @@ unsigned char oaes_inv_sub_byte_value[16][16] = {
 	/*f*/	0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d,
 };
 
-unsigned char oaes_gf_mul_2[16][16] = {
+static unsigned char oaes_gf_mul_2[16][16] = {
 	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
 	/*0*/	0x00, 0x02, 0x04, 0x06, 0x08, 0x0a, 0x0c, 0x0e, 0x10, 0x12, 0x14, 0x16, 0x18, 0x1a, 0x1c, 0x1e,
 	/*1*/	0x20, 0x22, 0x24, 0x26, 0x28, 0x2a, 0x2c, 0x2e, 0x30, 0x32, 0x34, 0x36, 0x38, 0x3a, 0x3c, 0x3e,
@@ -134,7 +141,7 @@ unsigned char oaes_gf_mul_2[16][16] = {
 	/*f*/	0xfb, 0xf9, 0xff, 0xfd, 0xf3, 0xf1, 0xf7, 0xf5, 0xeb, 0xe9, 0xef, 0xed, 0xe3, 0xe1, 0xe7, 0xe5,
 };
 
-unsigned char oaes_gf_mul_3[16][16] = {
+static unsigned char oaes_gf_mul_3[16][16] = {
 	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
 	/*0*/	0x00, 0x03, 0x06, 0x05, 0x0c, 0x0f, 0x0a, 0x09, 0x18, 0x1b, 0x1e, 0x1d, 0x14, 0x17, 0x12, 0x11,
 	/*1*/	0x30, 0x33, 0x36, 0x35, 0x3c, 0x3f, 0x3a, 0x39, 0x28, 0x2b, 0x2e, 0x2d, 0x24, 0x27, 0x22, 0x21,
@@ -154,7 +161,7 @@ unsigned char oaes_gf_mul_3[16][16] = {
 	/*f*/	0x0b, 0x08, 0x0d, 0x0e, 0x07, 0x04, 0x01, 0x02, 0x13, 0x10, 0x15, 0x16, 0x1f, 0x1c, 0x19, 0x1a,
 };
 
-unsigned char oaes_gf_mul_9[16][16] = {
+static unsigned char oaes_gf_mul_9[16][16] = {
 	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
 	/*0*/	0x00, 0x09, 0x12, 0x1b, 0x24, 0x2d, 0x36, 0x3f, 0x48, 0x41, 0x5a, 0x53, 0x6c, 0x65, 0x7e, 0x77,
 	/*1*/	0x90, 0x99, 0x82, 0x8b, 0xb4, 0xbd, 0xa6, 0xaf, 0xd8, 0xd1, 0xca, 0xc3, 0xfc, 0xf5, 0xee, 0xe7,
@@ -174,7 +181,7 @@ unsigned char oaes_gf_mul_9[16][16] = {
 	/*f*/	0x31, 0x38, 0x23, 0x2a, 0x15, 0x1c, 0x07, 0x0e, 0x79, 0x70, 0x6b, 0x62, 0x5d, 0x54, 0x4f, 0x46,
 };
 
-unsigned char oaes_gf_mul_b[16][16] = {
+static unsigned char oaes_gf_mul_b[16][16] = {
 	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
 	/*0*/	0x00, 0x0b, 0x16, 0x1d, 0x2c, 0x27, 0x3a, 0x31, 0x58, 0x53, 0x4e, 0x45, 0x74, 0x7f, 0x62, 0x69,
 	/*1*/	0xb0, 0xbb, 0xa6, 0xad, 0x9c, 0x97, 0x8a, 0x81, 0xe8, 0xe3, 0xfe, 0xf5, 0xc4, 0xcf, 0xd2, 0xd9,
@@ -194,7 +201,7 @@ unsigned char oaes_gf_mul_b[16][16] = {
 	/*f*/	0xca, 0xc1, 0xdc, 0xd7, 0xe6, 0xed, 0xf0, 0xfb, 0x92, 0x99, 0x84, 0x8f, 0xbe, 0xb5, 0xa8, 0xa3,
 };
 
-unsigned char oaes_gf_mul_d[16][16] = {
+static unsigned char oaes_gf_mul_d[16][16] = {
 	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
 	/*0*/	0x00, 0x0d, 0x1a, 0x17, 0x34, 0x39, 0x2e, 0x23, 0x68, 0x65, 0x72, 0x7f, 0x5c, 0x51, 0x46, 0x4b,
 	/*1*/	0xd0, 0xdd, 0xca, 0xc7, 0xe4, 0xe9, 0xfe, 0xf3, 0xb8, 0xb5, 0xa2, 0xaf, 0x8c, 0x81, 0x96, 0x9b,
@@ -214,7 +221,7 @@ unsigned char oaes_gf_mul_d[16][16] = {
 	/*f*/	0xdc, 0xd1, 0xc6, 0xcb, 0xe8, 0xe5, 0xf2, 0xff, 0xb4, 0xb9, 0xae, 0xa3, 0x80, 0x8d, 0x9a, 0x97,
 };
 
-unsigned char oaes_gf_mul_e[16][16] = {
+static unsigned char oaes_gf_mul_e[16][16] = {
 	// 		0,    1,    2,    3,    4,    5,    6,    7,    8,    9,    a,    b,    c,    d,    e,    f,
 	/*0*/	0x00, 0x0e, 0x1c, 0x12, 0x38, 0x36, 0x24, 0x2a, 0x70, 0x7e, 0x6c, 0x62, 0x48, 0x46, 0x54, 0x5a,
 	/*1*/	0xe0, 0xee, 0xfc, 0xf2, 0xd8, 0xd6, 0xc4, 0xca, 0x90, 0x9e, 0x8c, 0x82, 0xa8, 0xa6, 0xb4, 0xba,
@@ -290,6 +297,42 @@ static OAES_RET oaes_word_rot_left( unsigned char word[OAES_COL_LEN] )
 	memcpy( _temp, word + 1, OAES_COL_LEN - 1 );
 	_temp[OAES_COL_LEN - 1] = word[0];
 	memcpy( word, _temp, OAES_COL_LEN );
+	
+	return OAES_RET_SUCCESS;
+}
+
+static OAES_RET oaes_shift_rows( unsigned char block[OAES_BLOCK_SIZE] )
+{
+	unsigned char _temp[OAES_BLOCK_SIZE - OAES_COL_LEN];
+
+	if( NULL == block )
+		return OAES_RET_ARG1;
+
+	memcpy( _temp, block + OAES_COL_LEN + 1, OAES_COL_LEN - 1 );
+	_temp[OAES_COL_LEN - 1] = block[OAES_COL_LEN];
+	memcpy( _temp + OAES_COL_LEN, block + 2 * OAES_COL_LEN + 2, OAES_COL_LEN - 2 );
+	memcpy( _temp + OAES_COL_LEN + 2, block + 2 * OAES_COL_LEN, OAES_COL_LEN - 2 );
+	_temp[2 * OAES_COL_LEN] = block[4 * OAES_COL_LEN - 1];
+	memcpy( _temp + 2 * OAES_COL_LEN + 1, block + 3 * OAES_COL_LEN, OAES_COL_LEN - 1 );
+	memcpy( block + OAES_COL_LEN, _temp, OAES_BLOCK_SIZE - OAES_COL_LEN);
+	
+	return OAES_RET_SUCCESS;
+}
+
+static OAES_RET oaes_inv_shift_rows( unsigned char block[OAES_BLOCK_SIZE] )
+{
+	unsigned char _temp[OAES_BLOCK_SIZE - OAES_COL_LEN];
+
+	if( NULL == block )
+		return OAES_RET_ARG1;
+
+	_temp[0] = block[2 * OAES_COL_LEN - 1];
+	memcpy( _temp + 1, block + OAES_COL_LEN, OAES_COL_LEN - 1 );
+	memcpy( _temp + OAES_COL_LEN, block + 2 * OAES_COL_LEN + 2, OAES_COL_LEN - 2 );
+	memcpy( _temp + OAES_COL_LEN + 2, block + 2 * OAES_COL_LEN, OAES_COL_LEN - 2 );
+	memcpy( _temp + 2 * OAES_COL_LEN, block + 3 * OAES_COL_LEN + 1, OAES_COL_LEN - 1 );
+	_temp[3 * OAES_COL_LEN - 1] = block[3 * OAES_COL_LEN];
+	memcpy( block + OAES_COL_LEN, _temp, OAES_BLOCK_SIZE - OAES_COL_LEN);
 	
 	return OAES_RET_SUCCESS;
 }
@@ -594,6 +637,7 @@ OAES_RET oaes_key_gen_256( OAES_CTX * ctx )
 OAES_RET oaes_key_export( OAES_CTX * ctx,
 		unsigned char * data, int * data_len )
 {
+	int _data_len_in;
 	oaes_ctx * _ctx = (oaes_ctx *) ctx;
 	
 	if( NULL == _ctx )
@@ -602,25 +646,24 @@ OAES_RET oaes_key_export( OAES_CTX * ctx,
 	if( NULL == _ctx->key )
 		return OAES_RET_NOKEY;
 	
-	if( NULL == data )
-	{
-		if( NULL == data_len )
-			return OAES_RET_ARG2;
-		else
-		{
-			*data_len = _ctx->key->data_len;
-			return OAES_RET_SUCCESS;
-		}
-	}
-	
 	if( NULL == data_len )
 		return OAES_RET_ARG3;
+
+	_data_len_in = *data_len;
+	// data + header
+	*data_len = _ctx->key->data_len + OAES_BLOCK_SIZE;
+
+	if( NULL == data )
+		return OAES_RET_SUCCESS;
 	
-	if( _ctx->key->data_len > *data_len )
+	if( _data_len_in < *data_len )
 		return OAES_RET_BUF;
 	
-	*data_len = _ctx->key->data_len;
-	memcpy( data, _ctx->key->data, *data_len );
+	// header
+	memcpy( data, oaes_header, OAES_BLOCK_SIZE );
+	data[5] = 0x01;
+	data[7] = _ctx->key->data_len;
+	memcpy( data + OAES_BLOCK_SIZE, _ctx->key->data, *data_len );
 	
 	return OAES_RET_SUCCESS;
 }
@@ -630,6 +673,7 @@ OAES_RET oaes_key_import( OAES_CTX * ctx,
 {
 	oaes_ctx * _ctx = (oaes_ctx *) ctx;
 	OAES_RET _rc = OAES_RET_SUCCESS;
+	int _key_length;
 	
 	if( NULL == _ctx )
 		return OAES_RET_ARG1;
@@ -639,13 +683,50 @@ OAES_RET oaes_key_import( OAES_CTX * ctx,
 	
 	switch( data_len )
 	{
+		case 16 + OAES_BLOCK_SIZE:
+		case 24 + OAES_BLOCK_SIZE:
+		case 32 + OAES_BLOCK_SIZE:
+			break;
+		default:
+			return OAES_RET_ARG3;
+	}
+	
+	// header
+	if( 0 != memcmp( data, oaes_header, 4 ) )
+		return OAES_RET_HEADER;
+
+	// header version
+	switch( data[4] )
+	{
+		case 0x01:
+			break;
+		default:
+			return OAES_RET_HEADER;
+	}
+	
+	// header type
+	switch( data[5] )
+	{
+		case 0x01:
+			break;
+		default:
+			return OAES_RET_HEADER;
+	}
+	
+	// options
+	_key_length = data[7];
+	switch( _key_length )
+	{
 		case 16:
 		case 24:
 		case 32:
 			break;
 		default:
-			return OAES_RET_ARG3;
+			return OAES_RET_HEADER;
 	}
+	
+	if( data_len != _key_length + OAES_BLOCK_SIZE )
+			return OAES_RET_ARG3;
 	
 	if( _ctx->key )
 		oaes_key_destroy( &(_ctx->key) );
@@ -655,9 +736,9 @@ OAES_RET oaes_key_import( OAES_CTX * ctx,
 	if( NULL == _ctx->key )
 		return OAES_RET_MEM;
 	
-	_ctx->key->data_len = data_len;
+	_ctx->key->data_len = _key_length;
 	_ctx->key->data = (unsigned char *)
-			calloc( data_len, sizeof( unsigned char ));
+			calloc( _key_length, sizeof( unsigned char ));
 	
 	if( NULL == _ctx->key->data )
 	{
@@ -665,7 +746,7 @@ OAES_RET oaes_key_import( OAES_CTX * ctx,
 		return OAES_RET_MEM;
 	}
 
-	memcpy( _ctx->key->data, data, data_len );
+	memcpy( _ctx->key->data, data + OAES_BLOCK_SIZE, _key_length );
 	_rc = _rc || oaes_key_expand( ctx );
 	
 	if( _rc != OAES_RET_SUCCESS )
@@ -706,7 +787,8 @@ OAES_CTX * oaes_init()
 		srand( oaes_get_seed() );
 #endif // OAES_HAVE_ISAAC
 
-	_ctx->key = NULL;	
+	_ctx->key = NULL;
+	oaes_set_options( _ctx, OAES_OPTION_CBC );
 	
 	return (OAES_CTX *) _ctx;
 }
@@ -731,11 +813,45 @@ OAES_RET oaes_uninit( OAES_CTX ** ctx )
 		(*_ctx)->rctx = NULL;
 	}
 #endif // OAES_HAVE_ISAAC
-
+	
 	free( *_ctx );
 	*_ctx = NULL;
 
 	return OAES_RET_SUCCESS;
+}
+
+OAES_RET oaes_set_options( OAES_CTX * ctx, OAES_OPTIONS options )
+{
+	size_t _i;
+	oaes_ctx * _ctx = (oaes_ctx *) ctx;
+	
+	if( NULL == _ctx )
+		return OAES_RET_ARG1;
+
+	// validate that all options are valid
+	if( options & ~(
+			OAES_OPTION_ECB |
+			OAES_OPTION_CBC ) )
+		return OAES_RET_ARG2;
+
+	if( ( options & OAES_OPTION_ECB ) &&
+			( options & OAES_OPTION_CBC ) )
+		return OAES_RET_ARG2;
+
+	_ctx->options = options;
+	
+	if( options & OAES_OPTION_ECB )
+		memset( _ctx->iv, 0, OAES_BLOCK_SIZE );
+
+	if( options & OAES_OPTION_CBC )
+	{
+		for( _i = 0; _i < OAES_BLOCK_SIZE; _i++ )
+#ifdef OAES_HAVE_ISAAC
+			_ctx->iv[_i] = (unsigned char) rand( _ctx->rctx );
+#else
+			_ctx->iv[_i] = (unsigned char) rand();
+#endif // OAES_HAVE_ISAAC
+	}
 }
 
 static OAES_RET oaes_encrypt_block(
@@ -768,12 +884,7 @@ static OAES_RET oaes_encrypt_block(
 			oaes_sub_byte( c + _j );
 	
 		// ShiftRows(state)
-		oaes_word_rot_left( c + 4 );
-		oaes_word_rot_left( c + 8 );
-		oaes_word_rot_left( c + 8 );
-		oaes_word_rot_left( c + 12 );
-		oaes_word_rot_left( c + 12 );
-		oaes_word_rot_left( c + 12 );
+		oaes_shift_rows( c );
 		
 		// MixColumns
 		oaes_mix_cols( c );
@@ -789,12 +900,7 @@ static OAES_RET oaes_encrypt_block(
 		oaes_sub_byte( c + _i );
 	
 	// ShiftRows(state)
-	oaes_word_rot_left( c + 4 );
-	oaes_word_rot_left( c + 8 );
-	oaes_word_rot_left( c + 8 );
-	oaes_word_rot_left( c + 12 );
-	oaes_word_rot_left( c + 12 );
-	oaes_word_rot_left( c + 12 );
+	oaes_shift_rows( c );
 
 	// AddRoundKey(state, w[Nr*Nb, (Nr+1)*Nb-1])
 	for( _i = 0; _i < c_len; _i++ )
@@ -830,12 +936,7 @@ static OAES_RET oaes_decrypt_block(
 	for( _i = _ctx->key->num_keys - 2; _i > 0; _i-- )
 	{
 		// InvShiftRows(state)
-		oaes_word_rot_right( c + 4 );
-		oaes_word_rot_right( c + 8 );
-		oaes_word_rot_right( c + 8 );
-		oaes_word_rot_right( c + 12 );
-		oaes_word_rot_right( c + 12 );
-		oaes_word_rot_right( c + 12 );
+		oaes_inv_shift_rows( c );
 
 		// InvSubBytes(state)
 		for( _j = 0; _j < c_len; _j++ )
@@ -851,12 +952,7 @@ static OAES_RET oaes_decrypt_block(
 	}
 
 	// InvShiftRows(state)
-	oaes_word_rot_right( c + 4 );
-	oaes_word_rot_right( c + 8 );
-	oaes_word_rot_right( c + 8 );
-	oaes_word_rot_right( c + 12 );
-	oaes_word_rot_right( c + 12 );
-	oaes_word_rot_right( c + 12 );
+	oaes_inv_shift_rows( c );
 
 	// InvSubBytes(state)
 	for( _i = 0; _i < c_len; _i++ )
@@ -872,7 +968,7 @@ static OAES_RET oaes_decrypt_block(
 OAES_RET oaes_encrypt( OAES_CTX * ctx,
 		const unsigned char * m, size_t m_len, unsigned char * c, size_t * c_len )
 {
-	size_t _i, _j, _c_len_in;
+	size_t _i, _j, _c_len_in, _c_data_len;
 	size_t _pad_len = m_len % OAES_BLOCK_SIZE == 0 ?
 			0 : OAES_BLOCK_SIZE - m_len % OAES_BLOCK_SIZE;
 	oaes_ctx * _ctx = (oaes_ctx *) ctx;
@@ -888,33 +984,52 @@ OAES_RET oaes_encrypt( OAES_CTX * ctx,
 		return OAES_RET_ARG5;
 	
 	_c_len_in = *c_len;
-	*c_len = m_len + _pad_len;
+	// data + pad
+	_c_data_len = m_len + _pad_len;
+	// header + iv + data + pad
+	*c_len = 2 * OAES_BLOCK_SIZE + m_len + _pad_len;
 
 	if( NULL == c )
 		return OAES_RET_SUCCESS;
 	
-	if( _c_len_in < m_len + _pad_len )
+	if( _c_len_in < *c_len )
 		return OAES_RET_BUF;
 	
 	if( NULL == _ctx->key )
 		return OAES_RET_NOKEY;
 	
-	memcpy( c, m, m_len );
+	// header
+	memcpy( c, oaes_header, OAES_BLOCK_SIZE );
+	memset( c + 7, _ctx->options, 1);
+	// iv
+	memcpy( c + OAES_BLOCK_SIZE, _ctx->iv, OAES_BLOCK_SIZE );
+	// data
+	memcpy( c + 2 * OAES_BLOCK_SIZE, m, m_len );
 	
-	for( _i = 0; _i < *c_len; _i += OAES_BLOCK_SIZE )
+	for( _i = 0; _i < _c_data_len; _i += OAES_BLOCK_SIZE )
 	{
 		unsigned char _block[OAES_BLOCK_SIZE];
 		size_t _block_size = min( m_len - _i, OAES_BLOCK_SIZE );
 
-		memcpy( _block, c + _i, _block_size );
+		memcpy( _block, c + 2 * OAES_BLOCK_SIZE + _i, _block_size );
 		
 		// insert pad
 		for( _j = 0; _j < OAES_BLOCK_SIZE - _block_size; _j++ )
 			_block[ _block_size + _j ] = _j + 1;
 	
+		// CBC
+		if( _ctx->options & OAES_OPTION_CBC )
+		{
+			for( _j = 0; _j < OAES_BLOCK_SIZE; _j++ )
+				_block[_j] = _block[_j] ^ _ctx->iv[_j];
+		}
+	
 		_rc = _rc ||
 				oaes_encrypt_block( ctx, _block, OAES_BLOCK_SIZE );
-		memcpy( c + _i, _block, OAES_BLOCK_SIZE );
+		memcpy( c + 2 * OAES_BLOCK_SIZE + _i, _block, OAES_BLOCK_SIZE );
+		
+		if( _ctx->options & OAES_OPTION_CBC )
+			memcpy( _ctx->iv, _block, OAES_BLOCK_SIZE );
 	}
 	
 	return _rc;
@@ -923,10 +1038,12 @@ OAES_RET oaes_encrypt( OAES_CTX * ctx,
 OAES_RET oaes_decrypt( OAES_CTX * ctx,
 		const unsigned char * c, size_t c_len, unsigned char * m, size_t * m_len )
 {
-	size_t _i, _m_len_in;
+	size_t _i, _j, _m_len_in;
 	oaes_ctx * _ctx = (oaes_ctx *) ctx;
 	OAES_RET _rc = OAES_RET_SUCCESS;
 	size_t _temp;
+	unsigned char _iv[OAES_BLOCK_SIZE];
+	OAES_OPTION options;
 	
 	if( NULL == ctx )
 		return OAES_RET_ARG1;
@@ -941,23 +1058,71 @@ OAES_RET oaes_decrypt( OAES_CTX * ctx,
 		return OAES_RET_ARG5;
 	
 	_m_len_in = *m_len;
-	*m_len = c_len;
+	*m_len = c_len - 2 * OAES_BLOCK_SIZE;
 	
 	if( NULL == m )
 		return OAES_RET_SUCCESS;
 	
-	if( c_len > _m_len_in )
+	if( _m_len_in < *m_len )
 		return OAES_RET_BUF;
 	
 	if( NULL == _ctx->key )
 		return OAES_RET_NOKEY;
 	
-	memcpy( m, c, c_len );
+	// header
+	if( 0 != memcmp( c, oaes_header, 4 ) )
+		return OAES_RET_HEADER;
+
+	// header version
+	switch( c[4] )
+	{
+		case 0x01:
+			break;
+		default:
+			return OAES_RET_HEADER;
+	}
+	
+	// header type
+	switch( c[5] )
+	{
+		case 0x02:
+			break;
+		default:
+			return OAES_RET_HEADER;
+	}
+	
+	// options
+	options = c[7];
+	// validate that all options are valid
+	if( options & ~(
+			OAES_OPTION_ECB |
+			OAES_OPTION_CBC ) )
+		return OAES_RET_HEADER;
+	if( ( options & OAES_OPTION_ECB ) &&
+			( options & OAES_OPTION_CBC ) )
+		return OAES_RET_HEADER;
+	if( options == OAES_OPTION_NONE )
+		return OAES_RET_HEADER;
+	
+	// iv
+	memcpy( _iv, c + OAES_BLOCK_SIZE, OAES_BLOCK_SIZE);
+	// data + pad
+	memcpy( m, c + 2 * OAES_BLOCK_SIZE, *m_len );
 	
 	for( _i = 0; _i < *m_len; _i += OAES_BLOCK_SIZE )
 	{
+		if( ( options & OAES_OPTION_CBC ) && _i > 0 )
+			memcpy( _iv, c + OAES_BLOCK_SIZE + _i, OAES_BLOCK_SIZE );
+		
 		_rc = _rc ||
 				oaes_decrypt_block( ctx, m + _i, min( *m_len - _i, OAES_BLOCK_SIZE ) );
+		
+		// CBC
+		if( options & OAES_OPTION_CBC )
+		{
+			for( _j = 0; _j < OAES_BLOCK_SIZE; _j++ )
+				m[ _i + _j ] = m[ _i + _j ] ^ _iv[_j];
+		}
 	}
 	
 	// remove pad

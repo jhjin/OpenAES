@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "oaes_lib.h"
 
@@ -41,28 +42,26 @@ void usage( const char * exe_name )
 	
 	printf(
 			"Usage:\n"
-			"\t%s [-ecb] [-key < 128 | 192 | 256 >] <text>\n",
+			"\t%s [-ecb] [-key < 128 | 192 | 256 >] [-data <data_len>]\n",
 			exe_name
 	);
 }
 
-int main(int argc, char** argv)
-{
-	size_t _i;
+/*
+ * 
+ */
+int main(int argc, char** argv) {
+
+	size_t _i, _j;
+	time_t _time_start, _time_end;
 	OAES_CTX * ctx = NULL;
 	unsigned char *_encbuf, *_decbuf;
-	size_t _encbuf_len, _decbuf_len, _buf_len;
-	char *_buf;
+	size_t _encbuf_len, _decbuf_len;
+	unsigned char _buf[1024 * 1024];
 	short _is_ecb = 0;
-	char * _text = NULL;
 	int _key_len = 128;
+	size_t _data_len = 128;
 	
-	if( argc < 2 )
-	{
-		usage( argv[0] );
-		return EXIT_FAILURE;
-	}
-
 	for( _i = 1; _i < argc; _i++ )
 	{
 		int _found = 0;
@@ -76,13 +75,13 @@ int main(int argc, char** argv)
 		if( 0 == strcmp( argv[_i], "-key" ) )
 		{
 			_found = 1;
-			_i++; // len
+			_i++; // key_len
 			if( _i >= argc )
 			{
 				printf("Error: No value specified for '-%s'.\n",
 						"key");
 				usage( argv[0] );
-				return EXIT_FAILURE;
+				return 1;
 			}
 			_key_len = atoi( argv[_i] );
 			switch( _key_len )
@@ -95,55 +94,39 @@ int main(int argc, char** argv)
 					printf("Error: Invalid value [%d] specified for '-%s'.\n",
 							_key_len, "key");
 					usage( argv[0] );
-					return EXIT_FAILURE;
+					return 1;
 			}
+		}
+		
+		if( 0 == strcmp( argv[_i], "-data" ) )
+		{
+			_found = 1;
+			_i++; // data_len
+			if( _i >= argc )
+			{
+				printf("Error: No value specified for '-%s'.\n",
+						"data");
+				usage( argv[0] );
+				return 1;
+			}
+			_data_len = atoi( argv[_i] );
 		}
 		
 		if( 0 == _found )
 		{
-			if( _text )
-			{
-				printf("Error: Invalid option '%s'.\n", argv[_i]);
-				usage( argv[0] );
-				return EXIT_FAILURE;
-			}
-			else
-			{
-				_text = (char *) calloc( strlen( argv[_i] ) + 1, sizeof( char ) );
-				if( NULL == _text )
-				{
-					printf("Error: Failed to allocate memory.\n", argv[_i]);
-					return EXIT_FAILURE;
-				}
-				strcpy( _text, argv[_i] );
-			}
+			printf("Error: Invalid option '%s'.\n", argv[_i]);
+			usage( argv[0] );
+			return 1;
 		}			
 	}
 
-	if( NULL == _text )
-	{
-		usage( argv[0] );
-		return EXIT_FAILURE;
-	}
-
-	oaes_sprintf( NULL, &_buf_len,
-			(const unsigned char *)_text, strlen( _text ) );
-	_buf = (char *) calloc( _buf_len, sizeof( char ) );
-	printf( "\n***** plaintext  *****\n" );
-	if( _buf )
-	{
-		oaes_sprintf( _buf, &_buf_len,
-				(const unsigned char *)_text, strlen( _text ) );
-		printf( _buf );
-	}
-	printf( "\n**********************\n" );
-	free( _buf );
+	for( _i = 0; _i < 1024 * 1024; _i++ )
+		_buf[_i] = rand();
 	
 	ctx = oaes_init();
 	if( NULL == ctx )
 	{
 		printf("Error: Failed to initialize OAES.\n");
-		free( _text );
 		return EXIT_FAILURE;
 	}
 	if( _is_ecb )
@@ -168,18 +151,14 @@ int main(int argc, char** argv)
 	}
 
 	if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
-			(const unsigned char *)_text, strlen( _text ), NULL, &_encbuf_len ) )
+			(const unsigned char *)_buf, 1024 * 1024, NULL, &_encbuf_len ) )
 		printf("Error: Failed to retrieve required buffer size for encryption.\n");
 	_encbuf = (unsigned char *) calloc( _encbuf_len, sizeof( char ) );
 	if( NULL == _encbuf )
 	{
 		printf( "Error: Failed to allocate memory.\n" );
-		free( _text );
 		return EXIT_FAILURE;
 	}
-	if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
-			(const unsigned char *)_text, strlen( _text ), _encbuf, &_encbuf_len ) )
-		printf("Error: Encryption failed.\n");
 
 	if( OAES_RET_SUCCESS != oaes_decrypt( ctx,
 			_encbuf, _encbuf_len, NULL, &_decbuf_len ) )
@@ -187,43 +166,32 @@ int main(int argc, char** argv)
 	_decbuf = (unsigned char *) calloc( _decbuf_len, sizeof( char ) );
 	if( NULL == _decbuf )
 	{
-		printf( "Error: Failed to allocate memory.\n" );
-		free( _text );
 		free( _encbuf );
+		printf( "Error: Failed to allocate memory.\n" );
 		return EXIT_FAILURE;
 	}
-	if( OAES_RET_SUCCESS != oaes_decrypt( ctx,
-			_encbuf, _encbuf_len, _decbuf, &_decbuf_len ) )
-		printf("Error: Decryption failed.\n");
 
-	if( OAES_RET_SUCCESS !=  oaes_uninit( &ctx ) )
-		printf("Error: Failed to uninitialize OAES.\n");
+	time( &_time_start );
 	
-	oaes_sprintf( NULL, &_buf_len, _encbuf, _encbuf_len );
-	_buf = (char *) calloc( _buf_len, sizeof( char ) );
-	printf( "\n***** cyphertext *****\n" );
-	if( _buf )
+	for( _i = 0; _i < _data_len; _i++ )
 	{
-		oaes_sprintf( _buf, &_buf_len, _encbuf, _encbuf_len );
-		printf( _buf );
+		if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
+				(const unsigned char *)_buf, 1024 * 1024, _encbuf, &_encbuf_len ) )
+			printf("Error: Encryption failed.\n");
+		if( OAES_RET_SUCCESS !=  oaes_decrypt( ctx,
+				_encbuf, _encbuf_len, _decbuf, &_decbuf_len ) )
+			printf("Error: Decryption failed.\n");
 	}
-	printf( "\n**********************\n" );
-	free( _buf );
 	
-	oaes_sprintf( NULL, &_buf_len, _decbuf, _decbuf_len );
-	_buf = (char *) calloc( _buf_len, sizeof( char ) );
-	printf( "\n***** plaintext  *****\n" );
-	if( _buf )
-	{
-		oaes_sprintf( _buf, &_buf_len, _decbuf, _decbuf_len );
-		printf( _buf );
-	}
-	printf( "\n**********************\n\n" );
-	free( _buf );
-	
+	time( &_time_end );
+	printf( "Test encrypt and decrypt:\n\ttime: %d seconds\n\tdata: %ld MB"
+			"\n\tkey: %d bits\n\tmode: %s\n",
+			_time_end - _time_start, _data_len,
+			_key_len, _is_ecb? "EBC" : "CBC" );
 	free( _encbuf );
 	free( _decbuf );
-	free( _text );
+	if( OAES_RET_SUCCESS !=  oaes_uninit( &ctx ) )
+		printf("Error: Failed to uninitialize OAES.\n");
 
 	return (EXIT_SUCCESS);
 }

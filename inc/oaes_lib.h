@@ -35,6 +35,8 @@
 extern "C" {
 #endif
 
+#define OAES_VERSION "0.2.0"
+
 typedef void OAES_CTX;
 
 typedef enum
@@ -50,8 +52,18 @@ typedef enum
 	OAES_RET_NOKEY,
 	OAES_RET_MEM,
 	OAES_RET_BUF,
+	OAES_RET_HEADER,
 	OAES_RET_COUNT
 } OAES_RET;
+
+typedef enum
+{
+	OAES_OPTION_NONE = 0,
+	OAES_OPTION_ECB = 1,
+	OAES_OPTION_CBC = 2,
+} OAES_OPTION;
+
+typedef int OAES_OPTIONS;
 
 /*
  * // usage:
@@ -81,6 +93,8 @@ typedef enum
 OAES_CTX * oaes_init();
 
 OAES_RET oaes_uninit( OAES_CTX ** ctx );
+
+OAES_RET oaes_set_options( OAES_CTX * ctx, OAES_OPTIONS options );
 
 OAES_RET oaes_key_gen_128( OAES_CTX * ctx );
 

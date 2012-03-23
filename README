@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------
-OpenAES-0.1.0
+OpenAES-0.2.0
 Nabil S. Al Ramli
 www.nalramli.com
 ---------------------------------------------------------------------------
@@ -45,7 +45,7 @@ be easily integrated into applications.
 Compiling
 ---------
 
-OpenAES has been tested with the GNU as well as VC compilers.  It is
+OpenAES has been tested with the GCC as well as VC compilers.  It is
 necessary to compile the source files located in ./src, and to add ./inc to
 the include paths.
 

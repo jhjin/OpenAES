@@ -1,0 +1,15 @@
+---------------------------------------------------------------------------
+OpenAES-0.2.0
+Nabil S. Al Ramli
+www.nalramli.com
+---------------------------------------------------------------------------
+
+OpenAES-0.2.0
+-------------
+* Add performance tests
+* Implement CBC mode in AES algorithm
+* Performance improvements in oaes_shift_rows() and oaes_inv_shift_rows()
+
+OpenAES-0.1.0
+-------------
+* Implement AES algorithm
