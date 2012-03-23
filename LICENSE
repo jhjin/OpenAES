@@ -1,13 +1,4 @@
 ---------------------------------------------------------------------------
-OpenAES-0.1.0
-Nabil S. Al Ramli
-www.nalramli.com
----------------------------------------------------------------------------
-
-License Terms
--------------
-
----------------------------------------------------------------------------
 OpenAES Licence
 ---------------------------------------------------------------------------
 Copyright (c) 2012, Nabil S. Al Ramli, www.nalramli.com
@@ -34,33 +25,3 @@ CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ---------------------------------------------------------------------------
-
-Introduction
-------------
-
-OpenAES is an open source implementation of the Advanced Encryption
-Standard.  It is distributed as a portable, lightweight C library that can
-be easily integrated into applications.
-
-Compiling
----------
-
-OpenAES has been tested with the GNU as well as VC compilers.  It is
-necessary to compile the source files located in ./src, and to add ./inc to
-the include paths.
-
-If you are building with OAES_HAVE_ISAAC defined (true by default), then
-you also need to link in the source files under ./src/isaac and also add
-./src/isaac to the include paths.
-
-You may edit ./inc/oaes_config.h to modify build options.
-
-Usage
------
-
-Usage is described in the header file ./inc/oaes_lib.h.
-
-Samples
--------
-
-Samples applications are provided in the /test folder.
