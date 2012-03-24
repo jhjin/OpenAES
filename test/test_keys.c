@@ -30,7 +30,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <io.h>
 
 #include "oaes_lib.h"
 
@@ -41,7 +40,7 @@ int main(int argc, char** argv) {
 
 	OAES_CTX * ctx = NULL;
 	unsigned char * _buf;
-	int _data_len;
+	size_t _data_len;
 	FILE * f = NULL;
 	OAES_RET _rc;
 	
@@ -164,7 +163,9 @@ int main(int argc, char** argv) {
 	f = fopen( "key_128", "rb" );
 	if( f )
 	{
-		_data_len = _filelength( _fileno(f) );
+		fseek( f, 0L, SEEK_END );
+		_data_len = ftell(f);
+		fseek( f, 0L, SEEK_SET );
 		_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
 		if( _buf )
 		{
@@ -190,7 +191,9 @@ int main(int argc, char** argv) {
 	f = fopen( "key_192", "rb" );
 	if( f )
 	{
-		_data_len = (int) _filelength( _fileno(f) );
+		fseek( f, 0L, SEEK_END );
+		_data_len = ftell(f);
+		fseek( f, 0L, SEEK_SET );
 		_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
 		if( _buf )
 		{
@@ -216,7 +219,9 @@ int main(int argc, char** argv) {
 	f = fopen( "key_256", "rb" );
 	if( f )
 	{
-		_data_len = (int) _filelength( _fileno(f) );
+		fseek( f, 0L, SEEK_END );
+		_data_len = ftell(f);
+		fseek( f, 0L, SEEK_SET );
 		_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
 		if( _buf )
 		{

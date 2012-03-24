@@ -134,7 +134,7 @@ int main(int argc, char** argv)
 	{
 		oaes_sprintf( _buf, &_buf_len,
 				(const unsigned char *)_text, strlen( _text ) );
-		printf( _buf );
+		printf( "%s", _buf );
 	}
 	printf( "\n**********************\n" );
 	free( _buf );
@@ -205,7 +205,7 @@ int main(int argc, char** argv)
 	if( _buf )
 	{
 		oaes_sprintf( _buf, &_buf_len, _encbuf, _encbuf_len );
-		printf( _buf );
+		printf( "%s", _buf );
 	}
 	printf( "\n**********************\n" );
 	free( _buf );
@@ -216,7 +216,7 @@ int main(int argc, char** argv)
 	if( _buf )
 	{
 		oaes_sprintf( _buf, &_buf_len, _decbuf, _decbuf_len );
-		printf( _buf );
+		printf( "%s", _buf );
 	}
 	printf( "\n**********************\n\n" );
 	free( _buf );

@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------
-OpenAES-0.2.0
+OpenAES-0.3.0
 Nabil S. Al Ramli
 www.nalramli.com
 ---------------------------------------------------------------------------
@@ -54,6 +54,9 @@ you also need to link in the source files under ./src/isaac and also add
 ./src/isaac to the include paths.
 
 You may edit ./inc/oaes_config.h to modify build options.
+
+CMakeLists.txt can be used to configure the source code with CMake on
+different platforms.
 
 Usage
 -----

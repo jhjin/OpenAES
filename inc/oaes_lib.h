@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-#define OAES_VERSION "0.2.0"
+#define OAES_VERSION "0.3.0"
 
 typedef void OAES_CTX;
 
@@ -104,10 +104,10 @@ OAES_RET oaes_key_gen_256( OAES_CTX * ctx );
 
 // set data == NULL to get the required data_len
 OAES_RET oaes_key_export( OAES_CTX * ctx,
-		unsigned char * data, int * data_len );
+		unsigned char * data, size_t * data_len );
 
 OAES_RET oaes_key_import( OAES_CTX * ctx,
-		const unsigned char * data, int data_len );
+		const unsigned char * data, size_t data_len );
 
 // set c == NULL to get the required c_len
 OAES_RET oaes_encrypt( OAES_CTX * ctx,

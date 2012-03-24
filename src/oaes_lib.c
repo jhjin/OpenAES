@@ -30,11 +30,13 @@
 
 #include <stddef.h>
 #include <time.h> 
-#include <SYS/timeb.h>
+#include <sys/timeb.h>
 #include <malloc.h>
 #include <string.h>
-#include <direct.h>
+
+#ifdef WIN32
 #include <process.h>
+#endif
 
 #include "oaes_config.h"
 #include "oaes_lib.h"
@@ -54,12 +56,12 @@
 
 typedef struct _oaes_key
 {
-	unsigned int data_len;
+	size_t data_len;
 	unsigned char *data;
-	unsigned int exp_data_len;
+	size_t exp_data_len;
 	unsigned char *exp_data;
-	unsigned int num_keys;
-	unsigned int key_base;
+	size_t num_keys;
+	size_t key_base;
 } oaes_key;
 
 typedef struct _oaes_ctx
@@ -451,18 +453,15 @@ static void oaes_get_seed( char buf[RANDSIZ + 1] )
 {
 	struct timeb timer;
 	struct tm *gmTimer;
-	struct _diskfree_t _driveinfo;
 	char * _test = NULL;
 	
-	_getdiskfree(0, &_driveinfo);
 	ftime (&timer);
 	gmTimer = gmtime( &timer.time );
 	_test = (char *) calloc( sizeof( char ), timer.millitm );
-	sprintf(buf, "%04d%02d%02d%02d%02d%02d%03d%p%d%ld%ld",
+	sprintf( buf, "%04d%02d%02d%02d%02d%02d%03d%p%d",
 		gmTimer->tm_year + 1900, gmTimer->tm_mon + 1, gmTimer->tm_mday,
 		gmTimer->tm_hour, gmTimer->tm_min, gmTimer->tm_sec, timer.millitm,
-		_test + timer.millitm, _getpid(),
-		_driveinfo.avail_clusters, _driveinfo.total_clusters);
+		_test + timer.millitm, getpid() );
 	
 	if( _test )
 		free( _test );
@@ -472,17 +471,15 @@ static unsigned int oaes_get_seed()
 {
 	struct timeb timer;
 	struct tm *gmTimer;
-	struct _diskfree_t _driveinfo;
 	char * _test = NULL;
 	unsigned int _ret = 0;
 	
-	_getdiskfree(0, &_driveinfo);
 	ftime (&timer);
 	gmTimer = gmtime( &timer.time );
 	_test = (char *) calloc( sizeof( char ), timer.millitm );
 	_ret = gmTimer->tm_year + 1900 + gmTimer->tm_mon + 1 + gmTimer->tm_mday +
 			gmTimer->tm_hour + gmTimer->tm_min + gmTimer->tm_sec + timer.millitm +
-			(unsigned int) ( _test + timer.millitm ) + _getpid();
+			(unsigned int) ( _test + timer.millitm ) + getpid();
 
 	if( _test )
 		free( _test );
@@ -520,7 +517,7 @@ static OAES_RET oaes_key_destroy( oaes_key ** key )
 
 static OAES_RET oaes_key_expand( OAES_CTX * ctx )
 {
-	int _i, _j;
+	size_t _i, _j;
 	oaes_ctx * _ctx = (oaes_ctx *) ctx;
 	
 	if( NULL == _ctx )
@@ -576,9 +573,9 @@ static OAES_RET oaes_key_expand( OAES_CTX * ctx )
 	return OAES_RET_SUCCESS;
 }
 
-static OAES_RET oaes_key_gen( OAES_CTX * ctx, int key_size )
+static OAES_RET oaes_key_gen( OAES_CTX * ctx, size_t key_size )
 {
-	int _i;
+	size_t _i;
 	oaes_key * _key = NULL;
 	oaes_ctx * _ctx = (oaes_ctx *) ctx;
 	OAES_RET _rc = OAES_RET_SUCCESS;
@@ -635,9 +632,9 @@ OAES_RET oaes_key_gen_256( OAES_CTX * ctx )
 }
 
 OAES_RET oaes_key_export( OAES_CTX * ctx,
-		unsigned char * data, int * data_len )
+		unsigned char * data, size_t * data_len )
 {
-	int _data_len_in;
+	size_t _data_len_in;
 	oaes_ctx * _ctx = (oaes_ctx *) ctx;
 	
 	if( NULL == _ctx )
@@ -669,7 +666,7 @@ OAES_RET oaes_key_export( OAES_CTX * ctx,
 }
 
 OAES_RET oaes_key_import( OAES_CTX * ctx,
-		const unsigned char * data, int data_len )
+		const unsigned char * data, size_t data_len )
 {
 	oaes_ctx * _ctx = (oaes_ctx *) ctx;
 	OAES_RET _rc = OAES_RET_SUCCESS;
@@ -852,6 +849,8 @@ OAES_RET oaes_set_options( OAES_CTX * ctx, OAES_OPTIONS options )
 			_ctx->iv[_i] = (unsigned char) rand();
 #endif // OAES_HAVE_ISAAC
 	}
+
+	return OAES_RET_SUCCESS;
 }
 
 static OAES_RET oaes_encrypt_block(
