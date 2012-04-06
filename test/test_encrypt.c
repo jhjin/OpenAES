@@ -147,7 +147,7 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 	if( _is_ecb )
-		if( OAES_RET_SUCCESS != oaes_set_options( ctx, OAES_OPTION_ECB ) )
+		if( OAES_RET_SUCCESS != oaes_set_option( ctx, OAES_OPTION_ECB, NULL ) )
 			printf("Error: Failed to set OAES options.\n");
 	switch( _key_len )
 	{

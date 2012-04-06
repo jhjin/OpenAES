@@ -60,7 +60,7 @@ int main(int argc, char** argv) {
 	unsigned char _buf[1024 * 1024];
 	short _is_ecb = 0;
 	int _key_len = 128;
-	size_t _data_len = 128;
+	size_t _data_len = 64;
 	
 	for( _i = 1; _i < argc; _i++ )
 	{
@@ -120,6 +120,9 @@ int main(int argc, char** argv) {
 		}			
 	}
 
+	// generate random test data
+	time( &_time_start );
+	srand( _time_start );
 	for( _i = 0; _i < 1024 * 1024; _i++ )
 		_buf[_i] = rand();
 	
@@ -130,7 +133,7 @@ int main(int argc, char** argv) {
 		return EXIT_FAILURE;
 	}
 	if( _is_ecb )
-		if( OAES_RET_SUCCESS != oaes_set_options( ctx, OAES_OPTION_ECB ) )
+		if( OAES_RET_SUCCESS != oaes_set_option( ctx, OAES_OPTION_ECB, NULL ) )
 			printf("Error: Failed to set OAES options.\n");
 	switch( _key_len )
 	{
@@ -184,7 +187,7 @@ int main(int argc, char** argv) {
 	}
 	
 	time( &_time_end );
-	printf( "Test encrypt and decrypt:\n\ttime: %I64d seconds\n\tdata: %ld MB"
+	printf( "Test encrypt and decrypt:\n\ttime: %ld seconds\n\tdata: %ld MB"
 			"\n\tkey: %d bits\n\tmode: %s\n",
 			_time_end - _time_start, _data_len,
 			_key_len, _is_ecb? "EBC" : "CBC" );

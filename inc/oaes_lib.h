@@ -35,7 +35,8 @@
 extern "C" {
 #endif
 
-#define OAES_VERSION "0.3.0"
+#define OAES_VERSION "0.4.0"
+#define OAES_BLOCK_SIZE 16
 
 typedef void OAES_CTX;
 
@@ -56,14 +57,33 @@ typedef enum
 	OAES_RET_COUNT
 } OAES_RET;
 
-typedef enum
-{
-	OAES_OPTION_NONE = 0,
-	OAES_OPTION_ECB = 1,
-	OAES_OPTION_CBC = 2,
-} OAES_OPTION;
+/*
+ * oaes_set_option() takes one of these values for its [option] parameter
+ * some options accept either an optional or a required [value] parameter
+ */
+// no option
+#define OAES_OPTION_NONE 0
+// enable ECB mode, disable CBC mode
+#define OAES_OPTION_ECB 4
+// enable CBC mode, disable ECB mode
+// value is optional, may pass unsigned char iv[OAES_BLOCK_SIZE] to specify
+// the value of the initialization vector, iv
+#define OAES_OPTION_CBC 8
 
-typedef int OAES_OPTIONS;
+#ifdef OAES_DEBUG
+typedef int ( * oaes_step_cb ) (
+		const unsigned char state[OAES_BLOCK_SIZE],
+		const char * step_name,
+		int step_count,
+		void * user_data );
+// enable state stepping mode
+// value is required, must pass oaes_step_cb to receive the state at each step
+#define OAES_OPTION_STEP_ON 16
+// disable state stepping mode
+#define OAES_OPTION_STEP_OFF 32
+#endif // OAES_DEBUG
+
+typedef int OAES_OPTION;
 
 /*
  * // usage:
@@ -72,10 +92,20 @@ typedef int OAES_OPTIONS;
  * .
  * .
  * .
- * oaes_gen_key_xxx( ctx );
- * oaes_key_export( ctx, _buf, &_buf_len );
+ * {
+ *   oaes_gen_key_xxx( ctx );
+ *   {
+ *     oaes_key_export( ctx, _buf, &_buf_len );
+ *     // or
+ *     oaes_key_export_data( ctx, _buf, &_buf_len );\
+ *   }
+ * }
  * // or
- * oaes_key_import( ctx, _buf, _buf_len );
+ * {
+ *   oaes_key_import( ctx, _buf, _buf_len );
+ *   // or
+ *   oaes_key_import_data( ctx, _buf, _buf_len );
+ * }
  * .
  * .
  * .
@@ -94,7 +124,8 @@ OAES_CTX * oaes_init();
 
 OAES_RET oaes_uninit( OAES_CTX ** ctx );
 
-OAES_RET oaes_set_options( OAES_CTX * ctx, OAES_OPTIONS options );
+OAES_RET oaes_set_option( OAES_CTX * ctx,
+		OAES_OPTION option, const void * value );
 
 OAES_RET oaes_key_gen_128( OAES_CTX * ctx );
 
@@ -102,11 +133,22 @@ OAES_RET oaes_key_gen_192( OAES_CTX * ctx );
 
 OAES_RET oaes_key_gen_256( OAES_CTX * ctx );
 
+// export key with header information
 // set data == NULL to get the required data_len
 OAES_RET oaes_key_export( OAES_CTX * ctx,
 		unsigned char * data, size_t * data_len );
 
+// directly export the data from key
+// set data == NULL to get the required data_len
+OAES_RET oaes_key_export_data( OAES_CTX * ctx,
+		unsigned char * data, size_t * data_len );
+
+// import key with header information
 OAES_RET oaes_key_import( OAES_CTX * ctx,
+		const unsigned char * data, size_t data_len );
+
+// directly import data into key
+OAES_RET oaes_key_import_data( OAES_CTX * ctx,
 		const unsigned char * data, size_t data_len );
 
 // set c == NULL to get the required c_len
