@@ -563,7 +563,7 @@ static OAES_RET oaes_key_expand( OAES_CTX * ctx )
 	memcpy( _ctx->key->exp_data, _ctx->key->data, _ctx->key->data_len );
 
 	// apply ExpandKey algorithm for remainder
-	for( _i = OAES_RKEY_LEN; _i < _ctx->key->num_keys * OAES_RKEY_LEN; _i++ )
+	for( _i = _ctx->key->key_base; _i < _ctx->key->num_keys * OAES_RKEY_LEN; _i++ )
 	{
 		unsigned char _temp[OAES_COL_LEN];
 		
@@ -589,7 +589,8 @@ static OAES_RET oaes_key_expand( OAES_CTX * ctx )
 		for( _j = 0; _j < OAES_COL_LEN; _j++ )
 		{
 			_ctx->key->exp_data[ _i * OAES_RKEY_LEN + _j ] =
-					_ctx->key->exp_data[ ( _i - 4 ) * OAES_RKEY_LEN + _j ] ^ _temp[_j];
+					_ctx->key->exp_data[ ( _i - _ctx->key->key_base ) *
+					OAES_RKEY_LEN + _j ] ^ _temp[_j];
 		}
 	}
 	

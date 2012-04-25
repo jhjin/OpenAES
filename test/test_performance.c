@@ -187,7 +187,7 @@ int main(int argc, char** argv) {
 	}
 	
 	time( &_time_end );
-	printf( "Test encrypt and decrypt:\n\ttime: %ld seconds\n\tdata: %ld MB"
+	printf( "Test encrypt and decrypt:\n\ttime: %lld seconds\n\tdata: %ld MB"
 			"\n\tkey: %d bits\n\tmode: %s\n",
 			_time_end - _time_start, _data_len,
 			_key_len, _is_ecb? "EBC" : "CBC" );
