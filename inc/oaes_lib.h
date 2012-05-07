@@ -35,7 +35,7 @@
 extern "C" {
 #endif
 
-#define OAES_VERSION "0.5.0"
+#define OAES_VERSION "0.6.0"
 #define OAES_BLOCK_SIZE 16
 
 typedef void OAES_CTX;

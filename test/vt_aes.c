@@ -35,7 +35,9 @@
 #define OAES_DEBUG 1
 #include "oaes_lib.h"
 
-int step_cb(
+static int _is_step = 1;
+
+static int step_cb(
 		const unsigned char state[OAES_BLOCK_SIZE],
 		const char * step_name,
 		int step_count,
@@ -57,11 +59,14 @@ int step_cb(
 		printf( "round[%2d].%-7s --> %s", step_count, step_name, _buf );
 		free( _buf );
 	}
+	
+	if( 1 == _is_step && '\n' != getchar( ) )
+		_is_step = 0;
 
 	return 0;
 }
 
-int to_binary( unsigned char * buf, size_t * buf_len, const char * data )
+static int to_binary( unsigned char * buf, size_t * buf_len, const char * data )
 {
 	size_t _i, _buf_len_in;
 	
@@ -102,14 +107,14 @@ int to_binary( unsigned char * buf, size_t * buf_len, const char * data )
 	return 0;
 }
 
-void usage( const char * exe_name )
+static void usage( const char * exe_name )
 {
 	if( NULL == exe_name )
 		return;
 	
 	printf(
 			"Usage:\n"
-			"\t%s [-ecb] [[-key < 128 | 192 | 256 | key_data >] [-bin] <text>\n",
+			"  %s [-step] [-ecb] [[-key < 128 | 192 | 256 | key_data >] [-bin] <text>\n",
 			exe_name
 	);
 }
@@ -135,7 +140,13 @@ int main(int argc, char** argv)
 	for( _i = 1; _i < argc; _i++ )
 	{
 		int _found = 0;
-		
+
+		if( 0 == strcmp( argv[_i], "-nostep" ) )
+		{
+			_found = 1;
+			_is_step = 0;
+		}
+
 		if( 0 == strcmp( argv[_i], "-ecb" ) )
 		{
 			_found = 1;
@@ -215,6 +226,9 @@ int main(int argc, char** argv)
 		usage( argv[0] );
 		return EXIT_FAILURE;
 	}
+
+	if( _is_step )
+		printf( "\nEnabling step mode, press Return to step.\n\n" );
 
 	if( _is_bin )
 	{

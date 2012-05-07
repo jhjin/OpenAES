@@ -1,5 +1,5 @@
 ---------------------------------------------------------------------------
-OpenAES-0.5.0
+OpenAES-0.6.0
 Nabil S. Al Ramli
 www.nalramli.com
 ---------------------------------------------------------------------------
@@ -55,8 +55,17 @@ you also need to link in the source files under ./src/isaac and also add
 
 You may edit ./inc/oaes_config.h to modify build options.
 
-CMakeLists.txt can be used to configure the source code with CMake on
-different platforms.
+CMake 2.8.0 can be used to build the test programs on different platforms.
+
+In a Linux command line terminal type:
+
+cmake .
+make
+
+In Windows, in a Visual Studio command line window type:
+
+cmake . -G "NMake Makefiles"
+nmake
 
 Usage
 -----
