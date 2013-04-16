@@ -38,7 +38,7 @@
 static int _is_step = 1;
 
 static int step_cb(
-		const unsigned char state[OAES_BLOCK_SIZE],
+		const uint8_t state[OAES_BLOCK_SIZE],
 		const char * step_name,
 		int step_count,
 		void * user_data )
@@ -66,7 +66,7 @@ static int step_cb(
 	return 0;
 }
 
-static int to_binary( unsigned char * buf, size_t * buf_len, const char * data )
+static int to_binary(uint8_t * buf, size_t * buf_len, const char * data)
 {
 	size_t _i, _buf_len_in;
 	
@@ -107,7 +107,7 @@ static int to_binary( unsigned char * buf, size_t * buf_len, const char * data )
 	return 0;
 }
 
-static void usage( const char * exe_name )
+static void usage(const char * exe_name)
 {
 	if( NULL == exe_name )
 		return;
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
 {
 	size_t _i;
 	OAES_CTX * ctx = NULL;
-	unsigned char *_encbuf, *_decbuf, *_key_data = NULL, *_bin_data = NULL;
+	uint8_t *_encbuf, *_decbuf, *_key_data = NULL, *_bin_data = NULL;
 	size_t _encbuf_len, _decbuf_len, _buf_len;
 	size_t _key_data_len = 0, _bin_data_len = 0;
 	char *_buf;
@@ -232,8 +232,7 @@ int main(int argc, char** argv)
 
 	if( _is_bin )
 	{
-		_bin_data = (unsigned char *) calloc(
-				_bin_data_len, sizeof( unsigned char ) );
+		_bin_data = (uint8_t *) calloc(_bin_data_len, sizeof(uint8_t));
 		if( NULL == _bin_data )
 		{
 			printf( "Error: Failed to allocate memory.\n" );
@@ -248,21 +247,20 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		oaes_sprintf( NULL, &_buf_len,
-				(const unsigned char *)_text, strlen( _text ) );
-		_buf = (char *) calloc( _buf_len, sizeof( char ) );
+		oaes_sprintf( NULL, &_buf_len, (const uint8_t *)_text, strlen(_text));
+		_buf = (char *) calloc(_buf_len, sizeof(char));
 		printf( "\n***** plaintext  *****\n" );
 		if( _buf )
 		{
 			oaes_sprintf( _buf, &_buf_len,
-					(const unsigned char *)_text, strlen( _text ) );
+					(const uint8_t *)_text, strlen( _text ) );
 			printf( "%s", _buf );
 		}
 		printf( "\n**********************\n" );
 		free( _buf );
 	}
 	
-	ctx = oaes_init();
+	ctx = oaes_alloc();
 	if( NULL == ctx )
 	{
 		printf("Error: Failed to initialize OAES.\n");
@@ -278,8 +276,7 @@ int main(int argc, char** argv)
 
 	if( _key_text )
 	{
-		_key_data = (unsigned char *) calloc(
-				_key_data_len, sizeof( unsigned char ) );
+		_key_data = (uint8_t *) calloc(_key_data_len, sizeof(uint8_t));
 		if( NULL == _key_data )
 		{
 			printf( "Error: Failed to allocate memory.\n" );
@@ -319,7 +316,7 @@ int main(int argc, char** argv)
 		if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
 				_bin_data, _bin_data_len, NULL, &_encbuf_len ) )
 			printf("Error: Failed to retrieve required buffer size for encryption.\n");
-		_encbuf = (unsigned char *) calloc( _encbuf_len, sizeof( char ) );
+		_encbuf = (uint8_t *) calloc(_encbuf_len, sizeof(uint8_t));
 		if( NULL == _encbuf )
 		{
 			printf( "Error: Failed to allocate memory.\n" );
@@ -337,9 +334,9 @@ int main(int argc, char** argv)
 	else
 	{
 		if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
-				(const unsigned char *)_text, strlen( _text ), NULL, &_encbuf_len ) )
+				(const uint8_t *)_text, strlen( _text ), NULL, &_encbuf_len ) )
 			printf("Error: Failed to retrieve required buffer size for encryption.\n");
-		_encbuf = (unsigned char *) calloc( _encbuf_len, sizeof( char ) );
+		_encbuf = (uint8_t *) calloc(_encbuf_len, sizeof(uint8_t));
 		if( NULL == _encbuf )
 		{
 			printf( "Error: Failed to allocate memory.\n" );
@@ -349,7 +346,7 @@ int main(int argc, char** argv)
 		}
 		printf( "\n" );
 		if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
-				(const unsigned char *)_text, strlen( _text ), _encbuf, &_encbuf_len ) )
+				(const uint8_t *)_text, strlen( _text ), _encbuf, &_encbuf_len ) )
 			printf("Error: Encryption failed.\n");
 		printf( "\n**********************\n\n" );
 	}
@@ -357,7 +354,7 @@ int main(int argc, char** argv)
 	if( OAES_RET_SUCCESS != oaes_decrypt( ctx,
 			_encbuf, _encbuf_len, NULL, &_decbuf_len ) )
 		printf("Error: Failed to retrieve required buffer size for encryption.\n");
-	_decbuf = (unsigned char *) calloc( _decbuf_len, sizeof( char ) );
+	_decbuf = (uint8_t *) calloc(_decbuf_len, sizeof(uint8_t));
 	if( NULL == _decbuf )
 	{
 		printf( "Error: Failed to allocate memory.\n" );
@@ -372,11 +369,11 @@ int main(int argc, char** argv)
 			_encbuf, _encbuf_len, _decbuf, &_decbuf_len ) )
 		printf("Error: Decryption failed.\n");
 
-	if( OAES_RET_SUCCESS !=  oaes_uninit( &ctx ) )
+	if( OAES_RET_SUCCESS !=  oaes_free( &ctx ) )
 		printf("Error: Failed to uninitialize OAES.\n");
 	
 	oaes_sprintf( NULL, &_buf_len, _encbuf, _encbuf_len );
-	_buf = (char *) calloc( _buf_len, sizeof( char ) );
+	_buf = (char *) calloc(_buf_len, sizeof(char));
 	printf( "\n***** cyphertext *****\n" );
 	if( _buf )
 	{
@@ -387,7 +384,7 @@ int main(int argc, char** argv)
 	free( _buf );
 	
 	oaes_sprintf( NULL, &_buf_len, _decbuf, _decbuf_len );
-	_buf = (char *) calloc( _buf_len, sizeof( char ) );
+	_buf = (char *) calloc(_buf_len, sizeof(char));
 	printf( "\n***** plaintext  *****\n" );
 	if( _buf )
 	{

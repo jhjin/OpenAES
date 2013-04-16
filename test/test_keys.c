@@ -39,12 +39,12 @@
 int main(int argc, char** argv) {
 
 	OAES_CTX * ctx = NULL;
-	unsigned char * _buf;
+	uint8_t * _buf;
 	size_t _data_len;
 	FILE * f = NULL;
 	OAES_RET _rc;
 	
-	if( NULL == ( ctx = oaes_init() ) )
+	if( NULL == ( ctx = oaes_alloc() ) )
 	{
 		printf( "Error: Initialization failed.\n" );
 		return 1;
@@ -55,35 +55,35 @@ int main(int argc, char** argv) {
 	if( OAES_RET_SUCCESS != ( _rc = oaes_key_gen_128(ctx) ) )
 	{
 		printf( "Error: Failed to generate 128-bit key [%d].\n", _rc );
-		oaes_uninit( &ctx );
+		oaes_free(&ctx);
 		return 1;
 	}
 	
-	if( OAES_RET_SUCCESS != ( _rc = oaes_key_export( ctx, NULL, &_data_len ) ) )
+	if( OAES_RET_SUCCESS != ( _rc = oaes_key_export(ctx, NULL, &_data_len) ) )
 	{
 		printf( "Error: Failed to retrieve key length [%d].\n", _rc );
-		oaes_uninit( &ctx );
+		oaes_free(&ctx);
 		return 1;
 	}
 	
-	_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
+	_buf = (uint8_t *) calloc(_data_len, sizeof(uint8_t));
 	if( _buf )
 	{
-		if( OAES_RET_SUCCESS != ( _rc = oaes_key_export( ctx, _buf, &_data_len ) ) )
+		if( OAES_RET_SUCCESS != ( _rc = oaes_key_export(ctx, _buf, &_data_len) ) )
 		{
-			printf( "Error: Failed to export key [%d].\n", _rc );
-			free( _buf );
-			oaes_uninit( &ctx );
+			printf("Error: Failed to export key [%d].\n", _rc);
+			free(_buf);
+			oaes_free(&ctx);
 			return 1;
 		}
 		
 		f = fopen( "key_128", "wb" );
 		if( f )
 		{
-			fwrite( _buf, _data_len, sizeof( unsigned char ), f );
-			fclose( f );
+			fwrite(_buf, _data_len, sizeof(uint8_t), f);
+			fclose(f);
 		}
-		free( _buf );
+		free(_buf);
 	}
 	
 	/* ************** Generate 192-bit key and export it **************
@@ -91,158 +91,158 @@ int main(int argc, char** argv) {
 	if( OAES_RET_SUCCESS != ( _rc = oaes_key_gen_192(ctx) ) )
 	{
 		printf( "Error: Failed to generate 192-bit key [%d].\n", _rc );
-		oaes_uninit( &ctx );
+		oaes_free(&ctx);
 		return 1;
 	}
 	
-	if( OAES_RET_SUCCESS != ( _rc = oaes_key_export( ctx, NULL, &_data_len ) ) )
+	if( OAES_RET_SUCCESS != ( _rc = oaes_key_export(ctx, NULL, &_data_len) ) )
 	{
 		printf( "Error: Failed to retrieve key length [%d].\n", _rc );
-		oaes_uninit( &ctx );
+		oaes_free(&ctx);
 		return 1;
 	}
 	
-	_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
+	_buf = (uint8_t *) calloc(_data_len, sizeof(uint8_t));
 	if( _buf )
 	{
-		if( OAES_RET_SUCCESS != ( _rc = oaes_key_export( ctx, _buf, &_data_len ) ) )
+		if( OAES_RET_SUCCESS != ( _rc = oaes_key_export(ctx, _buf, &_data_len) ) )
 		{
-			printf( "Error: Failed to export key [%d].\n", _rc );
-			free( _buf );
-			oaes_uninit( &ctx );
+			printf("Error: Failed to export key [%d].\n", _rc);
+			free(_buf);
+			oaes_free(&ctx);
 			return 1;
 		}
 		
-		f = fopen( "key_192", "wb" );
+		f = fopen("key_192", "wb");
 		if( f )
 		{
-			fwrite( _buf, _data_len, sizeof( unsigned char ), f );
-			fclose( f );
+			fwrite(_buf, _data_len, sizeof(uint8_t), f);
+			fclose(f);
 		}
-		free( _buf );
+		free(_buf);
 	}
 	
 	/* ************** Generate 256-bit key and export it **************
 	 * ****************************************************************/
 	if( OAES_RET_SUCCESS != ( _rc = oaes_key_gen_256(ctx) ) )
 	{
-		printf( "Error: Failed to generate 256-bit key [%d].\n", _rc );
-		oaes_uninit( &ctx );
+		printf("Error: Failed to generate 256-bit key [%d].\n", _rc);
+		oaes_free(&ctx);
 		return 1;
 	}
 	
-	if( OAES_RET_SUCCESS != ( _rc = oaes_key_export( ctx, NULL, &_data_len ) ) )
+	if( OAES_RET_SUCCESS != ( _rc = oaes_key_export(ctx, NULL, &_data_len) ) )
 	{
-		printf( "Error: Failed to retrieve key length [%d].\n", _rc );
-		oaes_uninit( &ctx );
+		printf("Error: Failed to retrieve key length [%d].\n", _rc);
+		oaes_free(&ctx);
 		return 1;
 	}
 	
-	_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
+	_buf = (uint8_t *) calloc(_data_len, sizeof(uint8_t));
 	if( _buf )
 	{
-		if( OAES_RET_SUCCESS != ( _rc = oaes_key_export( ctx, _buf, &_data_len ) ) )
+		if( OAES_RET_SUCCESS != ( _rc = oaes_key_export(ctx, _buf, &_data_len) ) )
 		{
-			printf( "Error: Failed to export key [%d].\n", _rc );
-			free( _buf );
-			oaes_uninit( &ctx );
+			printf("Error: Failed to export key [%d].\n", _rc);
+			free(_buf);
+			oaes_free(&ctx);
 			return 1;
 		}
 		
-		f = fopen( "key_256", "wb" );
+		f = fopen("key_256", "wb");
 		if( f )
 		{
-			fwrite( _buf, _data_len, sizeof( unsigned char ), f );
-			fclose( f );
+			fwrite(_buf, _data_len, sizeof(uint8_t), f);
+			fclose(f);
 		}
-		free( _buf );
+		free(_buf);
 	}
 	
 	/* ********************** Import 128-bit key **********************
 	 * ****************************************************************/
-	f = fopen( "key_128", "rb" );
+	f = fopen("key_128", "rb");
 	if( f )
 	{
-		fseek( f, 0L, SEEK_END );
+		fseek(f, 0L, SEEK_END);
 		_data_len = ftell(f);
-		fseek( f, 0L, SEEK_SET );
-		_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
+		fseek(f, 0L, SEEK_SET);
+		_buf = (uint8_t *) calloc(_data_len, sizeof(uint8_t));
 		if( _buf )
 		{
-			fread( _buf, _data_len, sizeof( unsigned char ), f );
+			fread(_buf, _data_len, sizeof(uint8_t), f);
 			
 			if( OAES_RET_SUCCESS !=
-					( _rc = oaes_key_import( ctx, _buf, _data_len ) ) )
+					( _rc = oaes_key_import(ctx, _buf, _data_len) ) )
 			{
 				printf( "Error: Failed to import key [%d].\n", _rc );
-				free( _buf );
-				fclose( f );
-				oaes_uninit( &ctx );
+				free(_buf);
+				fclose(f);
+				oaes_free(&ctx);
 				return 1;
 			}
 			
-			free( _buf );
+			free(_buf);
 		}
-		fclose( f );
+		fclose(f);
 	}
 	
 	/* ********************** Import 192-bit key **********************
 	 * ****************************************************************/
-	f = fopen( "key_192", "rb" );
+	f = fopen("key_192", "rb");
 	if( f )
 	{
-		fseek( f, 0L, SEEK_END );
+		fseek(f, 0L, SEEK_END);
 		_data_len = ftell(f);
-		fseek( f, 0L, SEEK_SET );
-		_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
+		fseek(f, 0L, SEEK_SET);
+		_buf = (uint8_t *) calloc(_data_len, sizeof(uint8_t));
 		if( _buf )
 		{
-			fread( _buf, _data_len, sizeof( unsigned char ), f );
+			fread(_buf, _data_len, sizeof(uint8_t), f);
 			
 			if( OAES_RET_SUCCESS !=
-					( _rc = oaes_key_import( ctx, _buf, _data_len ) ) )
+					( _rc = oaes_key_import(ctx, _buf, _data_len) ) )
 			{
-				printf( "Error: Failed to import key [%d].\n", _rc );
-				free( _buf );
-				fclose( f );
-				oaes_uninit( &ctx );
+				printf("Error: Failed to import key [%d].\n", _rc);
+				free(_buf);
+				fclose(f);
+				oaes_free(&ctx);
 				return 1;
 			}
 			
-			free( _buf );
+			free(_buf);
 		}
-		fclose( f );
+		fclose(f);
 	}
 	
 	/* ********************** Import 256-bit key **********************
 	 * ****************************************************************/
-	f = fopen( "key_256", "rb" );
+	f = fopen("key_256", "rb");
 	if( f )
 	{
-		fseek( f, 0L, SEEK_END );
+		fseek(f, 0L, SEEK_END);
 		_data_len = ftell(f);
-		fseek( f, 0L, SEEK_SET );
-		_buf = (unsigned char *) calloc( _data_len, sizeof( unsigned char ) );
+		fseek(f, 0L, SEEK_SET);
+		_buf = (uint8_t *) calloc(_data_len, sizeof(uint8_t));
 		if( _buf )
 		{
-			fread( _buf, _data_len, sizeof( unsigned char ), f );
+			fread(_buf, _data_len, sizeof(uint8_t), f);
 			
 			if( OAES_RET_SUCCESS !=
-					( _rc = oaes_key_import( ctx, _buf, _data_len ) ) )
+					( _rc = oaes_key_import(ctx, _buf, _data_len) ) )
 			{
-				printf( "Error: Failed to import key [%d].\n", _rc );
-				free( _buf );
-				fclose( f );
-				oaes_uninit( &ctx );
+				printf("Error: Failed to import key [%d].\n", _rc);
+				free(_buf);
+				fclose(f);
+				oaes_free(&ctx);
 				return 1;
 			}
 			
-			free( _buf );
+			free(_buf);
 		}
-		fclose( f );
+		fclose(f);
 	}
 	
-	oaes_uninit( &ctx );
+	oaes_free(&ctx);
 
 	return (EXIT_SUCCESS);
 }

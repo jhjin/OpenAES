@@ -28,10 +28,7 @@
 
 cmake_minimum_required (VERSION 2.8.0)
 
-project ( "test_encrypt" )
-project ( "test_keys" )
-project ( "test_performance" )
-project ( "vt_aes" )
+project ( "oaes" )
 
 include_directories (
 		${CMAKE_CURRENT_SOURCE_DIR}/inc
@@ -66,7 +63,12 @@ set (SRC_vt_aes
 		${CMAKE_CURRENT_SOURCE_DIR}/test/vt_aes.c
 	)
 
+set (SRC_oaes
+		${CMAKE_CURRENT_SOURCE_DIR}/src/oaes.c
+	)
+
 add_executable (test_encrypt ${SRC_test_encrypt} ${SRC} ${HDR})
 add_executable (test_keys ${SRC_test_keys} ${SRC} ${HDR})
 add_executable (test_performance ${SRC_test_performance} ${SRC} ${HDR})
 add_executable (vt_aes ${SRC_vt_aes} ${SRC} ${HDR})
+add_executable (oaes ${SRC_oaes} ${SRC} ${HDR})

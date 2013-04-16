@@ -1,8 +1,13 @@
 ---------------------------------------------------------------------------
-OpenAES-0.6.0
+OpenAES-0.7.0
 Nabil S. Al Ramli
 www.nalramli.com
 ---------------------------------------------------------------------------
+
+OpenAES-0.7.0
+-------------
+* implement oaes command line utility
+* defect: oaes_decrypt() does not have a way to tell if pad pattern is accidental
 
 OpenAES-0.6.0
 -------------

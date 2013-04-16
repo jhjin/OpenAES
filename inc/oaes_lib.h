@@ -31,11 +31,13 @@
 #ifndef _OAES_LIB_H
 #define _OAES_LIB_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus 
 extern "C" {
 #endif
 
-#define OAES_VERSION "0.6.0"
+#define OAES_VERSION "0.7.0"
 #define OAES_BLOCK_SIZE 16
 
 typedef void OAES_CTX;
@@ -64,31 +66,31 @@ typedef enum
 // no option
 #define OAES_OPTION_NONE 0
 // enable ECB mode, disable CBC mode
-#define OAES_OPTION_ECB 4
+#define OAES_OPTION_ECB 1
 // enable CBC mode, disable ECB mode
-// value is optional, may pass unsigned char iv[OAES_BLOCK_SIZE] to specify
+// value is optional, may pass uint8_t iv[OAES_BLOCK_SIZE] to specify
 // the value of the initialization vector, iv
-#define OAES_OPTION_CBC 8
+#define OAES_OPTION_CBC 2
 
 #ifdef OAES_DEBUG
 typedef int ( * oaes_step_cb ) (
-		const unsigned char state[OAES_BLOCK_SIZE],
+		const uint8_t state[OAES_BLOCK_SIZE],
 		const char * step_name,
 		int step_count,
 		void * user_data );
 // enable state stepping mode
 // value is required, must pass oaes_step_cb to receive the state at each step
-#define OAES_OPTION_STEP_ON 16
+#define OAES_OPTION_STEP_ON 4
 // disable state stepping mode
-#define OAES_OPTION_STEP_OFF 32
+#define OAES_OPTION_STEP_OFF 8
 #endif // OAES_DEBUG
 
-typedef int OAES_OPTION;
+typedef uint16_t OAES_OPTION;
 
 /*
  * // usage:
  * 
- * OAES_CTX * ctx = oaes_init();
+ * OAES_CTX * ctx = oaes_alloc();
  * .
  * .
  * .
@@ -117,12 +119,12 @@ typedef int OAES_OPTION;
  * .
  * .
  * .
- * oaes_uninit( &ctx );
+ * oaes_free( &ctx );
  */
 
-OAES_CTX * oaes_init();
+OAES_CTX * oaes_alloc();
 
-OAES_RET oaes_uninit( OAES_CTX ** ctx );
+OAES_RET oaes_free( OAES_CTX ** ctx );
 
 OAES_RET oaes_set_option( OAES_CTX * ctx,
 		OAES_OPTION option, const void * value );
@@ -136,32 +138,32 @@ OAES_RET oaes_key_gen_256( OAES_CTX * ctx );
 // export key with header information
 // set data == NULL to get the required data_len
 OAES_RET oaes_key_export( OAES_CTX * ctx,
-		unsigned char * data, size_t * data_len );
+		uint8_t * data, size_t * data_len );
 
 // directly export the data from key
 // set data == NULL to get the required data_len
 OAES_RET oaes_key_export_data( OAES_CTX * ctx,
-		unsigned char * data, size_t * data_len );
+		uint8_t * data, size_t * data_len );
 
 // import key with header information
 OAES_RET oaes_key_import( OAES_CTX * ctx,
-		const unsigned char * data, size_t data_len );
+		const uint8_t * data, size_t data_len );
 
 // directly import data into key
 OAES_RET oaes_key_import_data( OAES_CTX * ctx,
-		const unsigned char * data, size_t data_len );
+		const uint8_t * data, size_t data_len );
 
 // set c == NULL to get the required c_len
 OAES_RET oaes_encrypt( OAES_CTX * ctx,
-		const unsigned char * m, size_t m_len, unsigned char * c, size_t * c_len );
+		const uint8_t * m, size_t m_len, uint8_t * c, size_t * c_len );
 
 // set m == NULL to get the required m_len
 OAES_RET oaes_decrypt( OAES_CTX * ctx,
-		const unsigned char * c, size_t c_len, unsigned char * m, size_t * m_len );
+		const uint8_t * c, size_t c_len, uint8_t * m, size_t * m_len );
 
 // set buf == NULL to get the required buf_len
 OAES_RET oaes_sprintf(
-		char * buf, size_t * buf_len, const unsigned char * data, size_t data_len );
+		char * buf, size_t * buf_len, const uint8_t * data, size_t data_len );
 
 #ifdef __cplusplus 
 }

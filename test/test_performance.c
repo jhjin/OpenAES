@@ -35,7 +35,7 @@
 
 #include "oaes_lib.h"
 
-void usage( const char * exe_name )
+void usage(const char * exe_name)
 {
 	if( NULL == exe_name )
 		return;
@@ -55,9 +55,9 @@ int main(int argc, char** argv) {
 	size_t _i, _j;
 	time_t _time_start, _time_end;
 	OAES_CTX * ctx = NULL;
-	unsigned char *_encbuf, *_decbuf;
+	uint8_t *_encbuf, *_decbuf;
 	size_t _encbuf_len, _decbuf_len;
-	unsigned char _buf[1024 * 1024];
+	uint8_t _buf[1024 * 1024];
 	short _is_ecb = 0;
 	int _key_len = 128;
 	size_t _data_len = 64;
@@ -126,7 +126,7 @@ int main(int argc, char** argv) {
 	for( _i = 0; _i < 1024 * 1024; _i++ )
 		_buf[_i] = rand();
 	
-	ctx = oaes_init();
+	ctx = oaes_alloc();
 	if( NULL == ctx )
 	{
 		printf("Error: Failed to initialize OAES.\n");
@@ -154,9 +154,9 @@ int main(int argc, char** argv) {
 	}
 
 	if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
-			(const unsigned char *)_buf, 1024 * 1024, NULL, &_encbuf_len ) )
+			(const uint8_t *)_buf, 1024 * 1024, NULL, &_encbuf_len ) )
 		printf("Error: Failed to retrieve required buffer size for encryption.\n");
-	_encbuf = (unsigned char *) calloc( _encbuf_len, sizeof( char ) );
+	_encbuf = (uint8_t *) calloc( _encbuf_len, sizeof( char ) );
 	if( NULL == _encbuf )
 	{
 		printf( "Error: Failed to allocate memory.\n" );
@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
 	if( OAES_RET_SUCCESS != oaes_decrypt( ctx,
 			_encbuf, _encbuf_len, NULL, &_decbuf_len ) )
 		printf("Error: Failed to retrieve required buffer size for encryption.\n");
-	_decbuf = (unsigned char *) calloc( _decbuf_len, sizeof( char ) );
+	_decbuf = (uint8_t *) calloc( _decbuf_len, sizeof( char ) );
 	if( NULL == _decbuf )
 	{
 		free( _encbuf );
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
 	for( _i = 0; _i < _data_len; _i++ )
 	{
 		if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
-				(const unsigned char *)_buf, 1024 * 1024, _encbuf, &_encbuf_len ) )
+				(const uint8_t *)_buf, 1024 * 1024, _encbuf, &_encbuf_len ) )
 			printf("Error: Encryption failed.\n");
 		if( OAES_RET_SUCCESS !=  oaes_decrypt( ctx,
 				_encbuf, _encbuf_len, _decbuf, &_decbuf_len ) )
@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
 			_key_len, _is_ecb? "EBC" : "CBC" );
 	free( _encbuf );
 	free( _decbuf );
-	if( OAES_RET_SUCCESS !=  oaes_uninit( &ctx ) )
+	if( OAES_RET_SUCCESS !=  oaes_free( &ctx ) )
 		printf("Error: Failed to uninitialize OAES.\n");
 
 	return (EXIT_SUCCESS);
