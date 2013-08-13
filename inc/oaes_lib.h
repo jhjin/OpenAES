@@ -37,7 +37,21 @@
 extern "C" {
 #endif
 
-#define OAES_VERSION "0.7.0"
+#ifdef _WIN32
+#	ifdef OAES_SHARED
+#		ifdef oaes_lib_EXPORTS
+#			define OAES_API __declspec(dllexport)
+#		else
+#			define OAES_API __declspec(dllimport)
+#		endif
+#	else
+#		define OAES_API
+#	endif
+#else
+#	define OAES_API
+#endif // WIN32
+
+#define OAES_VERSION "0.8.0"
 #define OAES_BLOCK_SIZE 16
 
 typedef void OAES_CTX;
@@ -122,47 +136,47 @@ typedef uint16_t OAES_OPTION;
  * oaes_free( &ctx );
  */
 
-OAES_CTX * oaes_alloc();
+OAES_API OAES_CTX * oaes_alloc();
 
-OAES_RET oaes_free( OAES_CTX ** ctx );
+OAES_API OAES_RET oaes_free( OAES_CTX ** ctx );
 
-OAES_RET oaes_set_option( OAES_CTX * ctx,
+OAES_API OAES_RET oaes_set_option( OAES_CTX * ctx,
 		OAES_OPTION option, const void * value );
 
-OAES_RET oaes_key_gen_128( OAES_CTX * ctx );
+OAES_API OAES_RET oaes_key_gen_128( OAES_CTX * ctx );
 
-OAES_RET oaes_key_gen_192( OAES_CTX * ctx );
+OAES_API OAES_RET oaes_key_gen_192( OAES_CTX * ctx );
 
-OAES_RET oaes_key_gen_256( OAES_CTX * ctx );
+OAES_API OAES_RET oaes_key_gen_256( OAES_CTX * ctx );
 
 // export key with header information
 // set data == NULL to get the required data_len
-OAES_RET oaes_key_export( OAES_CTX * ctx,
+OAES_API OAES_RET oaes_key_export( OAES_CTX * ctx,
 		uint8_t * data, size_t * data_len );
 
 // directly export the data from key
 // set data == NULL to get the required data_len
-OAES_RET oaes_key_export_data( OAES_CTX * ctx,
+OAES_API OAES_RET oaes_key_export_data( OAES_CTX * ctx,
 		uint8_t * data, size_t * data_len );
 
 // import key with header information
-OAES_RET oaes_key_import( OAES_CTX * ctx,
+OAES_API OAES_RET oaes_key_import( OAES_CTX * ctx,
 		const uint8_t * data, size_t data_len );
 
 // directly import data into key
-OAES_RET oaes_key_import_data( OAES_CTX * ctx,
+OAES_API OAES_RET oaes_key_import_data( OAES_CTX * ctx,
 		const uint8_t * data, size_t data_len );
 
 // set c == NULL to get the required c_len
-OAES_RET oaes_encrypt( OAES_CTX * ctx,
+OAES_API OAES_RET oaes_encrypt( OAES_CTX * ctx,
 		const uint8_t * m, size_t m_len, uint8_t * c, size_t * c_len );
 
 // set m == NULL to get the required m_len
-OAES_RET oaes_decrypt( OAES_CTX * ctx,
+OAES_API OAES_RET oaes_decrypt( OAES_CTX * ctx,
 		const uint8_t * c, size_t c_len, uint8_t * m, size_t * m_len );
 
 // set buf == NULL to get the required buf_len
-OAES_RET oaes_sprintf(
+OAES_API OAES_RET oaes_sprintf(
 		char * buf, size_t * buf_len, const uint8_t * data, size_t data_len );
 
 #ifdef __cplusplus 

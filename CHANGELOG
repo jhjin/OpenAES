@@ -1,8 +1,14 @@
 ---------------------------------------------------------------------------
-OpenAES-0.7.0
 Nabil S. Al Ramli
 www.nalramli.com
 ---------------------------------------------------------------------------
+
+OpenAES-0.8.0
+-------------
+* implement multi-threading to improve performance
+* allow the user to enter a key after starting
+* build: add Windows installer Visual Studio 2010 setup project with basic shell integration
+* build: modify oaes_lib to static or shared library
 
 OpenAES-0.7.0
 -------------
