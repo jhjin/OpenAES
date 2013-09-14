@@ -3,6 +3,11 @@ Nabil S. Al Ramli
 www.nalramli.com
 ---------------------------------------------------------------------------
 
+OpenAES-0.8.1
+-------------
+* implement gen-key
+* implement --key-file
+
 OpenAES-0.8.0
 -------------
 * implement multi-threading to improve performance

@@ -98,6 +98,13 @@ void join_thread(uintptr_t id)
 	#define __min(a,b)  (((a) < (b)) ? (a) : (b))
 #endif // __min
 
+#if defined(_WIN32) && !defined(__SYMBIAN32__)
+#else
+	#ifndef _fprintf_p
+		#define _fprintf_p fprintf
+	#endif // _fprintf_p
+#endif
+
 #define OAES_BUF_LEN_ENC 4096 - 2 * OAES_BLOCK_SIZE
 #define OAES_BUF_LEN_DEC 4096
 #define OAES_THREADS 16
@@ -107,9 +114,12 @@ static void usage( const char * exe_name )
 	if( NULL == exe_name )
 		return;
 	
-	fprintf( stderr,
+	_fprintf_p( stderr,
 			"Usage:\n"
-			"  %s <command> --key <key_data> [options]\n"
+			"  %1$s gen-key < 128 | 192 | 256 > <key_file>\n"
+			"\n"
+			"  %1$s <command> --key <key_data> [options]\n"
+			"  %1$s <command> --key-file <key_file> [options]\n"
 			"\n"
 			"    command:\n"
 			"      enc: encrypt\n"
@@ -237,15 +247,15 @@ int main(int argc, char** argv)
 {
 	size_t _i = 0, _j = 0;
 	size_t _read_len = 0;
-	char *_file_in = NULL, *_file_out = NULL;
+	char *_file_in = NULL, *_file_out = NULL, *_file_k = NULL;
 	int _op = 0;
-	FILE *_f_in = stdin, *_f_out = stdout;
+	FILE *_f_in = stdin, *_f_out = stdout, *_f_k = NULL;
 	do_block _b[OAES_THREADS];
 	
 	fprintf( stderr, "\n"
 		"*******************************************************************************\n"
 		"* OpenAES %-10s                                                          *\n"
-		"* Copyright (c) 2012, Nabil S. Al Ramli, www.nalramli.com                     *\n"
+		"* Copyright (c) 2013, Nabil S. Al Ramli, www.nalramli.com                     *\n"
 		"*******************************************************************************\n\n",
 		OAES_VERSION );
 
@@ -259,7 +269,75 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-	if( 0 == strcmp( argv[1], "enc" ) )
+	if( 0 == strcmp( argv[1], "gen-key" ) )
+	{
+		OAES_CTX *_oaes = NULL;
+		uint8_t _buf[16384];
+		size_t _buf_len = sizeof(_buf);
+		OAES_RET _rc = OAES_RET_SUCCESS;
+
+		_i++;
+		_i++; // key_length
+		_i++; // key_file
+		if( _i >= argc )
+		{
+			fprintf( stderr, "Error: No value specified for '%s'.\n",
+					argv[1] );
+			usage( argv[0] );
+			return EXIT_FAILURE;
+		}
+		_key_data_len = atoi( argv[_i - 1] );
+		_file_k = argv[_i];
+		_oaes = oaes_alloc();
+		if( NULL == _oaes )
+		{
+			fprintf(stderr, "Error: Failed to initialize OAES.\n");
+			return OAES_RET_MEM;
+		}
+		switch( _key_data_len )
+		{
+			case 128:
+				_rc = oaes_key_gen_128(_oaes);
+				break;
+			case 192:
+				_rc = oaes_key_gen_192(_oaes);
+				break;
+			case 256:
+				_rc = oaes_key_gen_256(_oaes);
+				break;
+			default:
+				fprintf( stderr, "Error: Invalid value [%s] specified for '%s'.\n",
+						argv[_i - 1], argv[_i - 2] );
+				oaes_free(&_oaes);
+				return EXIT_FAILURE;
+		}
+		if( OAES_RET_SUCCESS != _rc )
+		{
+			fprintf( stderr, "Error: Failed to generate OAES %lu bit key.\n",
+				_key_data_len );
+			oaes_free(&_oaes);
+			return EXIT_FAILURE;
+		}
+		if( OAES_RET_SUCCESS != oaes_key_export(_oaes, _buf, &_buf_len) )
+		{
+			fprintf( stderr, "Error: Failed to retrieve key length %lu.\n",
+				_key_data_len );
+			oaes_free(&_oaes);
+			return EXIT_FAILURE;
+		}
+		oaes_free(&_oaes);
+		_f_k = fopen(_file_k, "wb");
+		if( NULL == _f_k )
+		{
+			fprintf(stderr,
+				"Error: Failed to open '%s' for writing.\n", _file_k);
+			return EXIT_FAILURE;
+		}
+		fwrite(_buf, sizeof(uint8_t), _buf_len, _f_k);
+		fclose(_f_k);
+		return EXIT_SUCCESS;
+	}
+	else if( 0 == strcmp( argv[1], "enc" ) )
 	{
 		_op = 0;
 		_read_len = OAES_BUF_LEN_ENC;
@@ -293,7 +371,7 @@ int main(int argc, char** argv)
 			if( _i >= argc )
 			{
 				fprintf(stderr, "Error: No value specified for '%s'.\n",
-						"--key");
+						argv[_i - 1]);
 				usage( argv[0] );
 				return EXIT_FAILURE;
 			}
@@ -307,6 +385,56 @@ int main(int argc, char** argv)
 			memcpy(_key_data, argv[_i], __min(32, strlen(argv[_i])));
 		}
 		
+		if( 0 == strcmp( argv[_i], "--key-file" ) )
+		{
+			OAES_CTX *_ctx = NULL;
+			uint8_t _buf[16384];
+			size_t _read = 0;
+
+			_found = 1;
+			_i++; // key_file
+			if( _i >= argc )
+			{
+				fprintf(stderr, "Error: No value specified for '%s'.\n",
+						argv[_i - 1]);
+				usage( argv[0] );
+				return EXIT_FAILURE;
+			}
+			_file_k = argv[_i];
+			_ctx = oaes_alloc();
+			if( NULL == _ctx )
+			{
+				fprintf(stderr, "Error: Failed to initialize OAES.\n");
+				return OAES_RET_MEM;
+			}
+			_f_k = fopen(_file_k, "rb");
+			if( NULL == _f_k )
+			{
+				fprintf(stderr,
+					"Error: Failed to open '%s' for reading.\n", _file_k);
+				oaes_free(&_ctx);
+				return EXIT_FAILURE;
+			}
+			_read = fread(_buf, sizeof(uint8_t), sizeof(_buf), _f_k);
+			fclose(_f_k);
+			if( OAES_RET_SUCCESS != oaes_key_import(_ctx, _buf, _read) )
+			{
+				fprintf(stderr,
+					"Error: Failed to import '%s'.\n", _file_k);
+				oaes_free(&_ctx);
+				return EXIT_FAILURE;
+			}
+			_key_data_len = sizeof(_key_data);
+			if( OAES_RET_SUCCESS != oaes_key_export_data(_ctx, _key_data, &_key_data_len) )
+			{
+				fprintf(stderr,
+					"Error: Failed to export '%s' data.\n", _file_k);
+				oaes_free(&_ctx);
+				return EXIT_FAILURE;
+			}
+			oaes_free(&_ctx);
+		}
+		
 		if( 0 == strcmp( argv[_i], "--in" ) )
 		{
 			_found = 1;
@@ -314,7 +442,7 @@ int main(int argc, char** argv)
 			if( _i >= argc )
 			{
 				fprintf(stderr, "Error: No value specified for '%s'.\n",
-						"--in");
+						argv[_i - 1]);
 				usage( argv[0] );
 				return EXIT_FAILURE;
 			}
@@ -328,7 +456,7 @@ int main(int argc, char** argv)
 			if( _i >= argc )
 			{
 				fprintf(stderr, "Error: No value specified for '%s'.\n",
-						"--out");
+						argv[_i - 1]);
 				usage( argv[0] );
 				return EXIT_FAILURE;
 			}
