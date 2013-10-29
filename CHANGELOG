@@ -3,6 +3,17 @@ Nabil S. Al Ramli
 www.nalramli.com
 ---------------------------------------------------------------------------
 
+OpenAES-0.9.0
+-------------
+* remove static OAES header from encrypted output
+* build: remove dependency on obselete malloc.h
+* oaes_base64: implement base64 algorithm
+* oaes: implement base64-enc and base64-dec commands
+* NOTE: oaes: enc and dec commands have been renamed to aes-enc and aes-dec
+* oaes: mdify --key option to only accept base64-encoded key_data
+* oaes: mdify --key option to enhance security if a longer key_data is entered
+* oaes: prevent overwriting existing files with the --out option
+
 OpenAES-0.8.1
 -------------
 * implement gen-key

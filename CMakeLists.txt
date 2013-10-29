@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # OpenAES License
 # ---------------------------------------------------------------------------
-# Copyright (c) 2012, Nabil S. Al Ramli, www.nalramli.com
+# Copyright (c) 2013, Nabil S. Al Ramli, www.nalramli.com
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -36,10 +36,13 @@ include_directories (
 	)
 
 set (HDR
+		${CMAKE_CURRENT_SOURCE_DIR}/inc/oaes_common.h
+		${CMAKE_CURRENT_SOURCE_DIR}/inc/oaes_base64.h
 		${CMAKE_CURRENT_SOURCE_DIR}/inc/oaes_lib.h
 	)
 
 set (SRC_lib
+		${CMAKE_CURRENT_SOURCE_DIR}/src/oaes_base64.c
 		${CMAKE_CURRENT_SOURCE_DIR}/src/oaes_lib.c
 		${CMAKE_CURRENT_SOURCE_DIR}/src/isaac/rand.c
 	)

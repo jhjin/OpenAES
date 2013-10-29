@@ -2,7 +2,7 @@
  * ---------------------------------------------------------------------------
  * OpenAES License
  * ---------------------------------------------------------------------------
- * Copyright (c) 2012, Nabil S. Al Ramli, www.nalramli.com
+ * Copyright (c) 2013, Nabil S. Al Ramli, www.nalramli.com
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,7 @@
 #ifndef _OAES_LIB_H
 #define _OAES_LIB_H
 
-#include <stdint.h>
+#include <oaes_common.h>
 
 #ifdef __cplusplus 
 extern "C" {
@@ -51,27 +51,9 @@ extern "C" {
 #	define OAES_API
 #endif // WIN32
 
-#define OAES_VERSION "0.8.1"
 #define OAES_BLOCK_SIZE 16
 
 typedef void OAES_CTX;
-
-typedef enum
-{
-	OAES_RET_FIRST = 0,
-	OAES_RET_SUCCESS = 0,
-	OAES_RET_UNKNOWN,
-	OAES_RET_ARG1,
-	OAES_RET_ARG2,
-	OAES_RET_ARG3,
-	OAES_RET_ARG4,
-	OAES_RET_ARG5,
-	OAES_RET_NOKEY,
-	OAES_RET_MEM,
-	OAES_RET_BUF,
-	OAES_RET_HEADER,
-	OAES_RET_COUNT
-} OAES_RET;
 
 /*
  * oaes_set_option() takes one of these values for its [option] parameter

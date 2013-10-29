@@ -2,7 +2,7 @@
  * ---------------------------------------------------------------------------
  * OpenAES License
  * ---------------------------------------------------------------------------
- * Copyright (c) 2012, Nabil S. Al Ramli, www.nalramli.com
+ * Copyright (c) 2013, Nabil S. Al Ramli, www.nalramli.com
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,7 @@
 
 #define OAES_DEBUG 1
 #include "oaes_lib.h"
+#include "oaes_base64.h"
 
 #if defined(_WIN32) && !defined(__SYMBIAN32__)
 #include <io.h>
@@ -105,8 +106,11 @@ void join_thread(uintptr_t id)
 	#endif // _fprintf_p
 #endif
 
-#define OAES_BUF_LEN_ENC 4096 - 2 * OAES_BLOCK_SIZE
-#define OAES_BUF_LEN_DEC 4096
+#define OAES_BASE64_LEN_ENC 3072
+#define OAES_BASE64_LEN_DEC 4096
+#define OAES_AES_LEN_ENC 4096 - 2 * OAES_BLOCK_SIZE
+#define OAES_AES_LEN_DEC 4096
+#define OAES_BUF_LEN 4096
 #define OAES_THREADS 16
 
 static void usage( const char * exe_name )
@@ -118,12 +122,22 @@ static void usage( const char * exe_name )
 			"Usage:\n"
 			"  %1$s gen-key < 128 | 192 | 256 > <key_file>\n"
 			"\n"
-			"  %1$s <command> --key <key_data> [options]\n"
-			"  %1$s <command> --key-file <key_file> [options]\n"
+			"  %1$s <base64_command> [options]\n"
 			"\n"
-			"    command:\n"
-			"      enc: encrypt\n"
-			"      dec:  decrypt\n"
+			"    base64_command:\n"
+			"      base64-enc: encode\n"
+			"      base64-dec:  decode\n"
+			"\n"
+			"    options:\n"
+			"      --in <path_in>\n"
+			"      --out <path_out>\n"
+			"\n"
+			"  %1$s <aes_command> --key <base64_encoded_key_data> [options]\n"
+			"  %1$s <aes_command> --key-file <key_file> [options]\n"
+			"\n"
+			"    aes_command:\n"
+			"      aes-enc: encrypt\n"
+			"      aes-dec:  decrypt\n"
 			"\n"
 			"    options:\n"
 			"      --ecb: use ecb mode instead of cbc\n"
@@ -142,13 +156,77 @@ typedef struct _do_block
 {
 	intptr_t id;
 	size_t in_len;
-	uint8_t in[OAES_BUF_LEN_DEC];
+	uint8_t in[OAES_BUF_LEN];
 	size_t out_len;
 	uint8_t *out;
 } do_block;
 
 // caller must free b->out if it's not NULL
-static OAES_RET _do_encrypt(do_block *b)
+static OAES_RET _do_base64_encode(do_block *b)
+{
+	OAES_CTX * ctx = NULL;
+	OAES_RET _rc = OAES_RET_SUCCESS;
+
+	if( NULL == b )
+		return OAES_RET_ARG1;
+
+	b->out = NULL;
+	b->out_len = 0;
+	_rc = oaes_base64_encode(
+		b->in, b->in_len, (char *) b->out, &(b->out_len) );
+	if( OAES_RET_SUCCESS != _rc )
+	{
+		fprintf(stderr, "Error: Failed to encrypt.\n");
+		oaes_free(&ctx);
+		return _rc;
+	}
+	b->out = (uint8_t *) calloc(b->out_len, sizeof(uint8_t));
+	if( NULL == b->out )
+	{
+		fprintf(stderr, "Error: Failed to allocate memory.\n");
+		oaes_free(&ctx);
+		return OAES_RET_MEM;
+	}
+	_rc = oaes_base64_encode(
+		b->in, b->in_len, (char *) b->out, &(b->out_len) );
+
+	return _rc;
+}
+
+// caller must free b->out if it's not NULL
+static OAES_RET _do_base64_decode(do_block *b)
+{
+	OAES_CTX * ctx = NULL;
+	OAES_RET _rc = OAES_RET_SUCCESS;
+
+	if( NULL == b )
+		return OAES_RET_ARG1;
+
+	b->out = NULL;
+	b->out_len = 0;
+	_rc = oaes_base64_decode(
+		(const char *) b->in, b->in_len, b->out, &(b->out_len) );
+	if( OAES_RET_SUCCESS != _rc )
+	{
+		fprintf(stderr, "Error: Failed to decrypt.\n");
+		oaes_free(&ctx);
+		return _rc;
+	}
+	b->out = (uint8_t *) calloc(b->out_len, sizeof(uint8_t));
+	if( NULL == b->out )
+	{
+		fprintf(stderr, "Error: Failed to allocate memory.\n");
+		oaes_free(&ctx);
+		return OAES_RET_MEM;
+	}
+	_rc = oaes_base64_decode(
+		(const char *) b->in, b->in_len, b->out, &(b->out_len) );
+
+	return _rc;
+}
+
+// caller must free b->out if it's not NULL
+static OAES_RET _do_aes_encrypt(do_block *b)
 {
 	OAES_CTX * ctx = NULL;
 	OAES_RET _rc = OAES_RET_SUCCESS;
@@ -196,7 +274,7 @@ static OAES_RET _do_encrypt(do_block *b)
 }
 
 // caller must free b->out if it's not NULL
-static OAES_RET _do_decrypt(do_block *b)
+static OAES_RET _do_aes_decrypt(do_block *b)
 {
 	OAES_CTX * ctx = NULL;
 	OAES_RET _rc = OAES_RET_SUCCESS;
@@ -326,6 +404,12 @@ int main(int argc, char** argv)
 			return EXIT_FAILURE;
 		}
 		oaes_free(&_oaes);
+		if( 0 == access(_file_k, 00) )
+		{
+			fprintf(stderr,
+				"Error: '%s' already exists.\n", _file_k);
+			return EXIT_FAILURE;
+		}
 		_f_k = fopen(_file_k, "wb");
 		if( NULL == _f_k )
 		{
@@ -337,15 +421,25 @@ int main(int argc, char** argv)
 		fclose(_f_k);
 		return EXIT_SUCCESS;
 	}
-	else if( 0 == strcmp( argv[1], "enc" ) )
+	else if( 0 == strcmp( argv[1], "base64-enc" ) )
 	{
 		_op = 0;
-		_read_len = OAES_BUF_LEN_ENC;
+		_read_len = OAES_BASE64_LEN_ENC;
 	}
-	else if( 0 == strcmp( argv[1], "dec" ) )
+	else if( 0 == strcmp( argv[1], "base64-dec" ) )
 	{
 		_op = 1;
-		_read_len = OAES_BUF_LEN_DEC;
+		_read_len = OAES_BASE64_LEN_DEC;
+	}
+	else if( 0 == strcmp( argv[1], "aes-enc" ) )
+	{
+		_op = 2;
+		_read_len = OAES_AES_LEN_ENC;
+	}
+	else if( 0 == strcmp( argv[1], "aes-dec" ) )
+	{
+		_op = 3;
+		_read_len = OAES_AES_LEN_DEC;
 	}
 	else
 	{
@@ -366,8 +460,10 @@ int main(int argc, char** argv)
 		
 		if( 0 == strcmp( argv[_i], "--key" ) )
 		{
+			uint8_t *_buf = NULL;
+			size_t _buf_len = 0;
 			_found = 1;
-			_i++; // key_data
+			_i++; // base64_encoded_key_data
 			if( _i >= argc )
 			{
 				fprintf(stderr, "Error: No value specified for '%s'.\n",
@@ -375,14 +471,40 @@ int main(int argc, char** argv)
 				usage( argv[0] );
 				return EXIT_FAILURE;
 			}
-			_key_data_len = strlen(argv[_i]);
+			if( oaes_base64_decode(argv[_i], strlen(argv[_i]), NULL, &_buf_len) )
+			{
+				fprintf(stderr, "Error: Invalid value for '%s'.\n",
+						argv[_i - 1]);
+				usage( argv[0] );
+				return EXIT_FAILURE;
+			}
+			_buf = (uint8_t *) calloc(_buf_len, sizeof(uint8_t));
+			if( NULL == _buf )
+			{
+				fprintf(stderr, "Error: Failed to allocate memory.\n");
+				return EXIT_FAILURE;
+			}
+			if( oaes_base64_decode(argv[_i], strlen(argv[_i]), _buf, &_buf_len) )
+			{
+				free(_buf);
+				fprintf(stderr, "Error: Invalid value for '%s'.\n",
+						argv[_i - 1]);
+				usage( argv[0] );
+				return EXIT_FAILURE;
+			}
+			_key_data_len = _buf_len;
 			if( 16 >= _key_data_len )
 				_key_data_len = 16;
 			else if( 24 >= _key_data_len )
 				_key_data_len = 24;
 			else
 				_key_data_len = 32;
-			memcpy(_key_data, argv[_i], __min(32, strlen(argv[_i])));
+			memcpy(_key_data, _buf, __min(32, _buf_len));
+			for( _j = 0; _j < _buf_len; _j++ )
+			{
+				_key_data[_j % 32] ^= _buf[_j];
+			}
+			free(_buf);
 		}
 		
 		if( 0 == strcmp( argv[_i], "--key-file" ) )
@@ -471,20 +593,61 @@ int main(int argc, char** argv)
 		}			
 	}
 
-	if( 0 == _key_data_len )
+	switch(_op)
 	{
-		char _key_data_ent[33] = "";
+	case 0:
+	case 1:
+		break;
+	case 2:
+	case 3:
+		if( 0 == _key_data_len )
+		{
+			char _key_data_ent[8193] = "";
+			uint8_t *_buf = NULL;
+			size_t _buf_len = 0;
 
-		fprintf(stderr, "Enter key: ");
-		scanf("%32s", _key_data_ent);
-		_key_data_len = strlen(_key_data_ent);
-		if( 16 >= _key_data_len )
-			_key_data_len = 16;
-		else if( 24 >= _key_data_len )
-			_key_data_len = 24;
-		else
-			_key_data_len = 32;
-		memcpy(_key_data, _key_data_ent, __min(32, strlen(_key_data_ent)));
+			fprintf(stderr, "Enter base64-encoded key: ");
+			scanf("%8192s", _key_data_ent);
+			if( oaes_base64_decode(
+					_key_data_ent, strlen(_key_data_ent), NULL, &_buf_len ) )
+			{
+				fprintf(stderr, "Error: Invalid value for '%s'.\n",
+						argv[_i - 1]);
+				usage( argv[0] );
+				return EXIT_FAILURE;
+			}
+			_buf = (uint8_t *) calloc(_buf_len, sizeof(uint8_t));
+			if( NULL == _buf )
+			{
+				fprintf(stderr, "Error: Failed to allocate memory.\n");
+				return EXIT_FAILURE;
+			}
+			if( oaes_base64_decode(
+					_key_data_ent, strlen(_key_data_ent), _buf, &_buf_len ) )
+			{
+				free(_buf);
+				fprintf(stderr, "Error: Invalid value for '%s'.\n",
+						argv[_i - 1]);
+				usage( argv[0] );
+				return EXIT_FAILURE;
+			}
+			_key_data_len = _buf_len;
+			if( 16 >= _key_data_len )
+				_key_data_len = 16;
+			else if( 24 >= _key_data_len )
+				_key_data_len = 24;
+			else
+				_key_data_len = 32;
+			memcpy(_key_data, _buf, __min(32, _buf_len));
+			for( _j = 0; _j < _buf_len; _j++ )
+			{
+				_key_data[_j % 32] ^= _buf[_j];
+			}
+			free(_buf);
+		}
+		break;
+	default:
+		break;
 	}
 
 	if( _file_in )
@@ -493,7 +656,7 @@ int main(int argc, char** argv)
 		if( NULL == _f_in )
 		{
 			fprintf(stderr,
-				"Error: Failed to open '-%s' for reading.\n", _file_in);
+				"Error: Failed to open '%s' for reading.\n", _file_in);
 			return EXIT_FAILURE;
 		}
 	}
@@ -506,11 +669,17 @@ int main(int argc, char** argv)
 
 	if( _file_out )
 	{
+		if( 0 == access(_file_out, 00) )
+		{
+			fprintf(stderr,
+				"Error: '%s' already exists.\n", _file_out);
+			return EXIT_FAILURE;
+		}
 		_f_out = fopen(_file_out, "wb");
 		if( NULL == _f_out )
 		{
 			fprintf(stderr,
-				"Error: Failed to open '-%s' for writing.\n", _file_out);
+				"Error: Failed to open '%s' for writing.\n", _file_out);
 			if( _file_in )
 				fclose(_f_in);
 			return EXIT_FAILURE;
@@ -530,12 +699,22 @@ int main(int argc, char** argv)
 		switch(_op)
 		{
 		case 0:
-			_b[_i].id = start_thread(_do_encrypt, &(_b[_i]));
+			_b[_i].id = start_thread(_do_base64_encode, &(_b[_i]));
 			if( NULL == _b[_i].id )
 				fprintf(stderr, "Error: Failed to start encryption.\n");
 			break;
 		case 1:
-			_b[_i].id = start_thread(_do_decrypt, &(_b[_i]));
+			_b[_i].id = start_thread(_do_base64_decode, &(_b[_i]));
+			if( NULL == _b[_i].id )
+				fprintf(stderr, "Error: Failed to start decryption.\n");
+			break;
+		case 2:
+			_b[_i].id = start_thread(_do_aes_encrypt, &(_b[_i]));
+			if( NULL == _b[_i].id )
+				fprintf(stderr, "Error: Failed to start encryption.\n");
+			break;
+		case 3:
+			_b[_i].id = start_thread(_do_aes_decrypt, &(_b[_i]));
 			if( NULL == _b[_i].id )
 				fprintf(stderr, "Error: Failed to start decryption.\n");
 			break;

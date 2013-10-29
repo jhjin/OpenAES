@@ -31,10 +31,10 @@ static const char _NR[] = {
 	0x4e,0x61,0x62,0x69,0x6c,0x20,0x53,0x2e,0x20,
 	0x41,0x6c,0x20,0x52,0x61,0x6d,0x6c,0x69,0x00 };
 
+#include <stdlib.h>
 #include <stddef.h>
 #include <time.h> 
 #include <sys/timeb.h>
-#include <malloc.h>
 #include <string.h>
 
 #ifdef WIN32
@@ -46,6 +46,9 @@ static const char _NR[] = {
 
 #ifdef OAES_HAVE_ISAAC
 #include "rand.h"
+#define OAES_RAND(x) rand(x)
+#else
+#define OAES_RAND(x) rand()
 #endif // OAES_HAVE_ISAAC
 
 #define OAES_RKEY_LEN 4
@@ -628,11 +631,7 @@ static OAES_RET oaes_key_gen( OAES_CTX * ctx, size_t key_size )
 		return OAES_RET_MEM;
 	
 	for( _i = 0; _i < key_size; _i++ )
-#ifdef OAES_HAVE_ISAAC
-		_key->data[_i] = (uint8_t) rand( _ctx->rctx );
-#else
-		_key->data[_i] = (uint8_t) rand();
-#endif // OAES_HAVE_ISAAC
+		_key->data[_i] = (uint8_t) OAES_RAND(_ctx->rctx);
 	
 	_ctx->key = _key;
 	_rc = _rc || oaes_key_expand( ctx );
@@ -956,11 +955,7 @@ OAES_RET oaes_set_option( OAES_CTX * ctx,
 			else
 			{
 				for( _i = 0; _i < OAES_BLOCK_SIZE; _i++ )
-#ifdef OAES_HAVE_ISAAC
-					_ctx->iv[_i] = (uint8_t) rand( _ctx->rctx );
-#else
-					_ctx->iv[_i] = (uint8_t) rand();
-#endif // OAES_HAVE_ISAAC
+					_ctx->iv[_i] = (uint8_t) OAES_RAND(_ctx->rctx);
 			}
 			break;
 
@@ -1264,8 +1259,10 @@ OAES_RET oaes_encrypt( OAES_CTX * ctx,
 	if( NULL == _ctx->key )
 		return OAES_RET_NOKEY;
 	
+	// fill with random data first
+	for( _i = 0; _i < OAES_BLOCK_SIZE; _i++ )
+		c[_i] = (uint8_t) OAES_RAND(_ctx->rctx);
 	// header
-	memcpy(c, oaes_header, OAES_BLOCK_SIZE );
 	memcpy(c + 6, &_ctx->options, sizeof(_ctx->options));
 	memcpy(c + 8, &_flags, sizeof(_flags));
 	// iv
@@ -1335,28 +1332,6 @@ OAES_RET oaes_decrypt( OAES_CTX * ctx,
 	
 	if( NULL == _ctx->key )
 		return OAES_RET_NOKEY;
-	
-	// header
-	if( 0 != memcmp( c, oaes_header, 4 ) )
-		return OAES_RET_HEADER;
-
-	// header version
-	switch( c[4] )
-	{
-		case 0x01:
-			break;
-		default:
-			return OAES_RET_HEADER;
-	}
-	
-	// header type
-	switch( c[5] )
-	{
-		case 0x02:
-			break;
-		default:
-			return OAES_RET_HEADER;
-	}
 	
 	// options
 	memcpy(&_options, c + 6, sizeof(_options));
