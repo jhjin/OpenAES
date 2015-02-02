@@ -28,8 +28,8 @@
  * ---------------------------------------------------------------------------
  */
 static const char _NR[] = {
-	0x4e,0x61,0x62,0x69,0x6c,0x20,0x53,0x2e,0x20,
-	0x41,0x6c,0x20,0x52,0x61,0x6d,0x6c,0x69,0x00 };
+  0x4e,0x61,0x62,0x69,0x6c,0x20,0x53,0x2e,0x20,
+  0x41,0x6c,0x20,0x52,0x61,0x6d,0x6c,0x69,0x00 };
 
 #include <stdlib.h>
 #include <string.h>
@@ -38,10 +38,10 @@ static const char _NR[] = {
 #include "oaes_base64.h"
 
 static const char _oaes_base64_table[] =
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 OAES_RET oaes_base64_encode(
-	const uint8_t *in, size_t in_len, char *out, size_t *out_len)
+  const uint8_t *in, size_t in_len, char *out, size_t *out_len)
 {
   size_t _i = 0, _j = 0;
   unsigned char _buf1[3];
@@ -63,10 +63,10 @@ OAES_RET oaes_base64_encode(
   memset(out, 0, *out_len);
   *out_len = 0;
   while( in_len-- )
-	{
+  {
     _buf1[_i++] = *(in++);
     if( _i == 3 )
-		{
+    {
       _buf2[0] = (_buf1[0] & 0xfc) >> 2;
       _buf2[1] = ((_buf1[0] & 0x03) << 4) + ((_buf1[1] & 0xf0) >> 4);
       _buf2[2] = ((_buf1[1] & 0x0f) << 2) + ((_buf1[2] & 0xc0) >> 6);
@@ -109,7 +109,7 @@ OAES_RET oaes_base64_encode(
 }
 
 OAES_RET oaes_base64_decode(
-	const char *in, size_t in_len, uint8_t *out, size_t *out_len )
+  const char *in, size_t in_len, uint8_t *out, size_t *out_len )
 {
   size_t _i = 0, _j = 0, _idx = 0;
   uint8_t _buf2[4], _buf1[3];
@@ -130,10 +130,10 @@ OAES_RET oaes_base64_decode(
   memset(out, 0, *out_len);
   *out_len = 0;
   while( in_len-- && strchr(_oaes_base64_table, in[_idx++]) )
-	{
+  {
     _buf2[_i++] = in[_idx - 1];
     if( _i ==4 )
-		{
+    {
       for (_i = 0; _i < 4; _i++)
         _buf2[_i] = strchr(_oaes_base64_table, _buf2[_i]) - _oaes_base64_table;
 
@@ -151,7 +151,7 @@ OAES_RET oaes_base64_decode(
   }
 
   if( _i )
-	{
+  {
     for( _j = _i; _j <4; _j++ )
       _buf2[_j] = 0;
 

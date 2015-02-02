@@ -3,6 +3,13 @@ Nabil S. Al Ramli
 www.nalramli.com
 ---------------------------------------------------------------------------
 
+OpenAES-0.10.0
+-------------
+* oaes_lib: output iv and header separately
+* oaes: implement --iv option
+* oaes: bug-fix: crash when fail to base64-decode key entry
+* oaes_lib: bug-fix: memory leak in oaes_key_gen() if memory allocation fails
+
 OpenAES-0.9.0
 -------------
 * remove static OAES header from encrypted output
