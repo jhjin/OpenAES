@@ -34,202 +34,195 @@
 
 #include "oaes_lib.h"
 
-void usage(const char * exe_name)
-{
-  if( NULL == exe_name )
-    return;
-  
-  printf(
-      "Usage:\n"
-      "\t%s [-ecb] [-key < 128 | 192 | 256 >] <text>\n",
-      exe_name
-  );
+OAES_CTX *ctx = NULL;
+
+
+int file_crypto_init(void) {
+  ctx = oaes_alloc();
+  if (NULL == ctx) {
+    printf("Error: Failed to initialize OAES.\n");
+    return 1;
+  }
+  return 0;
 }
 
-int main(int argc, char** argv)
-{
-  size_t _i;
-  OAES_CTX * ctx = NULL;
-  uint8_t *_encbuf, *_decbuf;
-  size_t _encbuf_len, _decbuf_len, _buf_len;
-  char *_buf;
-  short _is_ecb = 0;
-  char * _text = NULL;
-  int _key_len = 128;
-  uint8_t _iv[OAES_BLOCK_SIZE] = "";
-  uint8_t _pad = 0;
-
-  if( argc < 2 )
-  {
-    usage( argv[0] );
-    return EXIT_FAILURE;
-  }
-
-  for( _i = 1; _i < argc; _i++ )
-  {
-    int _found = 0;
-    
-    if( 0 == strcmp( argv[_i], "-ecb" ) )
-    {
-      _found = 1;
-      _is_ecb = 1;
-    }
-    
-    if( 0 == strcmp( argv[_i], "-key" ) )
-    {
-      _found = 1;
-      _i++; // len
-      if( _i >= argc )
-      {
-        printf("Error: No value specified for '-%s'.\n",
-            "key");
-        usage( argv[0] );
-        return EXIT_FAILURE;
-      }
-      _key_len = atoi( argv[_i] );
-      switch( _key_len )
-      {
-        case 128:
-        case 192:
-        case 256:
-          break;
-        default:
-          printf("Error: Invalid value [%d] specified for '-%s'.\n",
-              _key_len, "key");
-          usage( argv[0] );
-          return EXIT_FAILURE;
-      }
-    }
-    
-    if( 0 == _found )
-    {
-      if( _text )
-      {
-        printf("Error: Invalid option '%s'.\n", argv[_i]);
-        usage( argv[0] );
-        return EXIT_FAILURE;
-      }
-      else
-      {
-        _text = (char *) calloc(strlen( argv[_i] ) + 1, sizeof(char));
-        if( NULL == _text )
-        {
-          printf("Error: Failed to allocate memory.\n", argv[_i]);
-          return EXIT_FAILURE;
-        }
-        strcpy( _text, argv[_i] );
-      }
-    }      
-  }
-
-  if( NULL == _text )
-  {
-    usage( argv[0] );
-    return EXIT_FAILURE;
-  }
-
-  oaes_sprintf( NULL, &_buf_len,
-      (const uint8_t *)_text, strlen( _text ) );
-  _buf = (char *) calloc(_buf_len, sizeof(char));
-  printf( "\n***** plaintext  *****\n" );
-  if( _buf )
-  {
-    oaes_sprintf( _buf, &_buf_len,
-        (const uint8_t *)_text, strlen( _text ) );
-    printf( "%s", _buf );
-  }
-  printf( "\n**********************\n" );
-  free( _buf );
-  
-  ctx = oaes_alloc();
-  if( NULL == ctx )
-  {
-    printf("Error: Failed to initialize OAES.\n");
-    free( _text );
-    return EXIT_FAILURE;
-  }
-  if( _is_ecb )
-    if( OAES_RET_SUCCESS != oaes_set_option( ctx, OAES_OPTION_ECB, NULL ) )
-      printf("Error: Failed to set OAES options.\n");
-  switch( _key_len )
-  {
-    case 128:
-      if( OAES_RET_SUCCESS != oaes_key_gen_128(ctx) )
-        printf("Error: Failed to generate OAES %d bit key.\n", _key_len);
-      break;
-    case 192:
-      if( OAES_RET_SUCCESS != oaes_key_gen_192(ctx) )
-        printf("Error: Failed to generate OAES %d bit key.\n", _key_len);
-      break;
-    case 256:
-      if( OAES_RET_SUCCESS != oaes_key_gen_256(ctx) )
-        printf("Error: Failed to generate OAES %d bit key.\n", _key_len);
-      break;
-    default:
-      break;
-  }
-
-  if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
-      (const uint8_t *)_text, strlen( _text ), NULL, &_encbuf_len,
-      NULL, NULL ) )
-    printf("Error: Failed to retrieve required buffer size for encryption.\n");
-  _encbuf = (uint8_t *) calloc( _encbuf_len, sizeof(uint8_t) );
-  if( NULL == _encbuf )
-  {
-    printf( "Error: Failed to allocate memory.\n" );
-    free( _text );
-    return EXIT_FAILURE;
-  }
-  memcpy(_iv, "1234567890123456", OAES_BLOCK_SIZE);
-  if( OAES_RET_SUCCESS != oaes_encrypt( ctx,
-      (const uint8_t *)_text, strlen( _text ), _encbuf, &_encbuf_len,
-      _iv, &_pad ) )
-    printf("Error: Encryption failed.\n");
-
-  if( OAES_RET_SUCCESS != oaes_decrypt( ctx,
-      _encbuf, _encbuf_len, NULL, &_decbuf_len, NULL, NULL ) )
-    printf("Error: Failed to retrieve required buffer size for encryption.\n");
-  _decbuf = (uint8_t *) calloc( _decbuf_len, sizeof(uint8_t) );
-  if( NULL == _decbuf )
-  {
-    printf( "Error: Failed to allocate memory.\n" );
-    free( _text );
-    free( _encbuf );
-    return EXIT_FAILURE;
-  }
-  memcpy(_iv, "1234567890123456", OAES_BLOCK_SIZE);
-  if( OAES_RET_SUCCESS != oaes_decrypt( ctx,
-      _encbuf, _encbuf_len, _decbuf, &_decbuf_len, _iv, _pad ) )
-    printf("Error: Decryption failed.\n");
-
-  if( OAES_RET_SUCCESS !=  oaes_free( &ctx ) )
+int file_crypto_close(OAES_CTX *ctx) {
+  if (OAES_RET_SUCCESS != oaes_free(&ctx)) {
     printf("Error: Failed to uninitialize OAES.\n");
-  
-  oaes_sprintf( NULL, &_buf_len, _encbuf, _encbuf_len );
-  _buf = (char *) calloc(_buf_len, sizeof(char));
-  printf( "\n***** cyphertext *****\n" );
-  if( _buf )
-  {
-    oaes_sprintf( _buf, &_buf_len, _encbuf, _encbuf_len );
-    printf( "%s", _buf );
+    return 1;
   }
-  printf( "\n**********************\n" );
-  free( _buf );
-  
-  oaes_sprintf( NULL, &_buf_len, _decbuf, _decbuf_len );
-  _buf = (char *) calloc(_buf_len, sizeof( char));
-  printf( "\n***** plaintext  *****\n" );
-  if( _buf )
-  {
-    oaes_sprintf( _buf, &_buf_len, _decbuf, _decbuf_len );
-    printf( "%s", _buf );
-  }
-  printf( "\n**********************\n\n" );
-  free( _buf );
-  
-  free( _encbuf );
-  free( _decbuf );
-  free( _text );
+  return 0;
+}
 
-  return (EXIT_SUCCESS);
+int file_crypto_key_gen(OAES_CTX *ctx) {
+  int i;
+  size_t key_size = 32; // AES256
+  uint8_t *data = (uint8_t *) calloc(key_size, sizeof(uint8_t));
+
+  for (i = 0; i < key_size; i++ )
+    data[i] = (uint8_t) 1; // rand();
+
+  if (OAES_RET_SUCCESS != oaes_key_import_data(ctx, data, key_size)) {
+    printf("Error: Failed to generate OAES 256 bit key.\n");
+    return 1;
+  }
+  return 0;
+}
+
+int file_crypto_encrypt(OAES_CTX *ctx,
+                        uint8_t *msg, size_t msg_len,
+                        uint8_t **enbuf, size_t *enbuf_len) {
+  uint8_t _pad = 1;
+  uint8_t _iv[OAES_BLOCK_SIZE] = "";
+
+  // estimate buffer size for encryption
+  if (OAES_RET_SUCCESS != oaes_encrypt(ctx, (const uint8_t*) msg, msg_len,
+                                       NULL, enbuf_len, NULL, NULL)) {
+    printf("Error: Failed to retrieve required buffer size for encryption.\n");
+    return 1;
+  }
+
+  // allocate buffer for encryption
+  *enbuf = (uint8_t *) calloc(*enbuf_len, sizeof(uint8_t));
+  if (NULL == *enbuf) {
+    printf("Error: Failed to allocate memory.\n");
+    return 1;
+  }
+
+  // add salt
+  memcpy(_iv, "1234567890123456", OAES_BLOCK_SIZE);
+
+  // encrypt msg
+  if (OAES_RET_SUCCESS != oaes_encrypt(ctx, (const uint8_t*) msg, msg_len,
+                                       *enbuf, enbuf_len, _iv, &_pad)) {
+    printf("Error: Encryption failed.\n");
+    return 1;
+  }
+
+  return 0;
+}
+
+int file_crypto_decrypt(OAES_CTX *ctx,
+                        uint8_t *enbuf, size_t enbuf_len,
+                        uint8_t **debuf, size_t *debuf_len) {
+  uint8_t _pad = 1;
+  uint8_t _iv[OAES_BLOCK_SIZE] = "";
+
+  // estimate buffer size for decryption
+  if (OAES_RET_SUCCESS != oaes_decrypt(ctx, enbuf, enbuf_len,
+                                       NULL, debuf_len, NULL, NULL)) {
+    printf("Error: Failed to retrieve required buffer size for decryption.\n");
+    return 1;
+  }
+
+  // allocate buffer for decryption
+  *debuf = (uint8_t *) calloc(*debuf_len, sizeof(uint8_t));
+  if (NULL == *debuf) {
+    printf( "Error: Failed to allocate memory.\n" );
+    return 1;
+  }
+
+  // add salt
+  memcpy(_iv, "1234567890123456", OAES_BLOCK_SIZE);
+
+  // decrypt msg
+  if (OAES_RET_SUCCESS != oaes_decrypt(ctx, enbuf, enbuf_len,
+                                       *debuf, debuf_len, _iv, _pad)) {
+    printf("Error: Decryption failed.\n");
+    return 1;
+  }
+
+  return 0;
+}
+
+int file_crypto_encrypt_case(OAES_CTX *ctx, const char *src, const char *dst) {
+
+  // open input file
+  FILE *ifp = fopen(src, "rb");
+  if (NULL == ifp) {
+    printf("Error: Failed to open the input file.\n");
+    return 1;
+  }
+
+  // open output file
+  FILE *ofp = fopen(dst, "wb+");
+  if (NULL == ifp) {
+    fclose(ifp);
+    printf("Error: Failed to open the output file.\n");
+    return 1;
+  }
+
+  // load input file into buffer
+  fseek(ifp, 0L, SEEK_END);
+  size_t msg_len = ftell(ifp);
+  fseek(ifp, 0L, SEEK_SET);
+  uint8_t *msg = (uint8_t *) calloc(msg_len, sizeof(uint8_t));
+  fread(msg, msg_len*sizeof(uint8_t), 1, ifp);
+
+  // encrypt sequence
+  uint8_t *enbuf; size_t enbuf_len;
+  file_crypto_encrypt(ctx, msg, msg_len, &enbuf, &enbuf_len);
+
+  // export to output file
+  fwrite(enbuf, 1, enbuf_len, ofp);
+
+  // release resource
+  free(msg);
+  free(enbuf);
+  fclose(ofp);
+  fclose(ifp);
+
+  // return success
+  return 0;
+}
+
+uint8_t *file_crypto_decrypt_case(OAES_CTX *ctx, const char *src, const char *dst) {
+
+  // open input file
+  FILE *ifp = fopen(src, "rb");
+  if (NULL == ifp) {
+    printf("Error: Failed to open the input file.\n");
+    return NULL;
+  }
+
+  // open output file
+  FILE *ofp = fopen(dst, "wb+");
+  if (NULL == ifp) {
+    fclose(ifp);
+    printf("Error: Failed to open the output file.\n");
+    return NULL;
+  }
+
+  // load input file into buffer
+  fseek(ifp, 0L, SEEK_END);
+  size_t msg_len = ftell(ifp);
+  fseek(ifp, 0L, SEEK_SET);
+  uint8_t *msg = (uint8_t *) calloc(msg_len, sizeof(uint8_t));
+  fread(msg, msg_len*sizeof(uint8_t), 1, ifp);
+
+  // decrypt sequence
+  uint8_t *debuf; size_t debuf_len;
+  file_crypto_decrypt(ctx, msg, msg_len, &debuf, &debuf_len);
+
+  // export to output file
+  fwrite(debuf, 1, debuf_len, ofp);
+
+  // release resource
+  free(msg);
+  free(debuf);
+  fclose(ofp);
+  fclose(ifp);
+
+  return NULL;
+}
+
+int main(void) {
+
+  file_crypto_init();
+  file_crypto_key_gen(ctx);
+  file_crypto_encrypt_case(ctx, "script.lua",  "script.elua");
+  file_crypto_decrypt_case(ctx, "script.elua", "script.dlua");
+  file_crypto_close(ctx);
+
+  return 0;
 }
