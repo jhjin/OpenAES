@@ -147,7 +147,6 @@ int file_crypto_encrypt_case(OAES_CTX *ctx, const char *src, const char *dst) {
   // open output file
   FILE *ofp = fopen(dst, "wb+");
   if (NULL == ifp) {
-    fclose(ifp);
     printf("Error: Failed to open the output file.\n");
     return 1;
   }
@@ -188,7 +187,6 @@ uint8_t *file_crypto_decrypt_case(OAES_CTX *ctx, const char *src, const char *ds
   // open output file
   FILE *ofp = fopen(dst, "wb+");
   if (NULL == ifp) {
-    fclose(ifp);
     printf("Error: Failed to open the output file.\n");
     return NULL;
   }
