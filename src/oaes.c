@@ -28,6 +28,7 @@
  * ---------------------------------------------------------------------------
  */
 
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,7 +40,7 @@
 #if defined(_WIN32) && !defined(__SYMBIAN32__)
 #include <io.h>
 #else
-__inline static int setmode(int a, int b)
+__inline static int xsetmode(int a, int b)
 {
   return 0;
 }
@@ -756,8 +757,8 @@ int main(int argc, char** argv)
   }
   else
   {
-    if( setmode(fileno(stdin), 0x8000) < 0 )
-      fprintf(stderr,"Error: Failed in setmode().\n");
+    if( xsetmode(fileno(stdin), 0x8000) < 0 )
+      fprintf(stderr,"Error: Failed in xsetmode().\n");
     _f_in = stdin;
   }
 
@@ -781,8 +782,8 @@ int main(int argc, char** argv)
   }
   else
   {
-    if( setmode(fileno(stdout), 0x8000) < 0 )
-      fprintf(stderr, "Error: Failed in setmode().\n");
+    if( xsetmode(fileno(stdout), 0x8000) < 0 )
+      fprintf(stderr, "Error: Failed in xsetmode().\n");
     _f_out = stdout;
   }
 

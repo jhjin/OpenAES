@@ -135,20 +135,12 @@ int file_crypto_decrypt(OAES_CTX *ctx,
   return 0;
 }
 
-int file_crypto_encrypt_case(OAES_CTX *ctx, const char *src, const char *dst) {
+int file_crypto_encrypt_case(OAES_CTX *ctx, const char *src) {
 
   // open input file
   FILE *ifp = fopen(src, "rb");
   if (NULL == ifp) {
     printf("Error: Failed to open the input file.\n");
-    return 1;
-  }
-
-  // open output file
-  FILE *ofp = fopen(dst, "wb+");
-  if (NULL == ifp) {
-    fclose(ifp);
-    printf("Error: Failed to open the output file.\n");
     return 1;
   }
 
@@ -162,14 +154,17 @@ int file_crypto_encrypt_case(OAES_CTX *ctx, const char *src, const char *dst) {
   // encrypt sequence
   uint8_t *enbuf; size_t enbuf_len;
   file_crypto_encrypt(ctx, msg, msg_len, &enbuf, &enbuf_len);
-
-  // export to output file
-  fwrite(enbuf, 1, enbuf_len, ofp);
+  printf("==> Embed this string and length into your C code\n");
+  printf("msg_len: %lu\n", msg_len);
+  printf("enbuf_len: %lu\n", enbuf_len);
+  for (size_t i = 0; i < enbuf_len; i++) {
+     printf("%02x", enbuf[i]);
+  }
+  printf("\n");
 
   // release resource
   free(msg);
   free(enbuf);
-  fclose(ofp);
   fclose(ifp);
 
   // return success
@@ -220,8 +215,29 @@ int main(void) {
 
   file_crypto_init();
   file_crypto_key_gen(ctx);
-  file_crypto_encrypt_case(ctx, "script.lua",  "script.elua");
-  file_crypto_decrypt_case(ctx, "script.elua", "script.dlua");
+  file_crypto_encrypt_case(ctx, "script.py");
+
+  // encrypted code for python script 'print("Hello World!")'
+  char *char_code = "2190cda759d5c9c6861d359f866021844ae339cc68ee5eff0c93d3df25101aa5";
+  size_t enbuf_len = 32;
+  uint8_t enbuf[enbuf_len];
+  for (size_t i = 0; i < enbuf_len; i++) {
+    sscanf(char_code + 2 * i, "%02x", &enbuf[i]);
+  }
+
+  // decrypt sequence
+  uint8_t *debuf;
+  size_t debuf_len;
+  file_crypto_decrypt(ctx, enbuf, enbuf_len, &debuf, &debuf_len);
+
+  // execute python script in command line
+  char msg[debuf_len + 17];
+  strcpy(msg, "python -c \"\"\"\n");
+  strcat(msg, (char *)debuf);
+  strcat(msg, "\"\"\"");
+  system(msg);
+
+  free(debuf);
   file_crypto_close(ctx);
 
   return 0;
